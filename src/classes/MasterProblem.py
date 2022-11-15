@@ -1,0 +1,2 @@
+class MasterProblem:
+    pass
