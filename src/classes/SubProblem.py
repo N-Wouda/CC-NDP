@@ -1,9 +1,13 @@
+from abc import ABC
+
+import numpy as np
+
 from .Cut import Cut
 
 
-class SubProblem:
+class SubProblem(ABC):
     """
-    TODO
+    Abstract base class for a subproblem formulation.
     """
 
     def __init__(self):
@@ -19,4 +23,7 @@ class SubProblem:
         pass
 
     def solve(self):
+        pass
+
+    def update_rhs(self, x: np.ndarray):
         pass

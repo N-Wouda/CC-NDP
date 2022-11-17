@@ -7,3 +7,4 @@ import numpy as np
 class Cut:
     beta: np.ndarray
     gamma: float
+    scen: int
