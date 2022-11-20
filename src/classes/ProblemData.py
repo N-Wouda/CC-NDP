@@ -2,9 +2,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from src.utils import JsonStorableMixin
+
 
 @dataclass
-class ProblemData:
+class ProblemData(JsonStorableMixin):
     nodes: list[int]
     locs: list[tuple[int, int]]
 

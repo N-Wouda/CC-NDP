@@ -1,5 +1,13 @@
-import logging.config
+"""
+Solves an instance to optimality. See the arguments (via ``run --help``) for
+further information on the available options.
+"""
+from __future__ import annotations
 
+import logging.config
+from argparse import ArgumentParser
+
+import numpy as np
 import yaml
 
 # Must precede any imports, see https://stackoverflow.com/a/20280587.
@@ -7,9 +15,60 @@ with open("logging.yaml", "r") as file:
     log_settings = yaml.safe_load(file.read())
     logging.config.dictConfig(log_settings)
 
+from src.classes import ProblemData, Result, FORMULATIONS
+from src.functions import create_master, create_subproblems
+
+
+def parse_args():
+    parser = ArgumentParser(prog="run")
+
+    # General arguments for the entire program.
+    parser.add_argument("data_loc", help="File system data location.")
+    parser.add_argument("res_loc", help="File system result location.")
+    parser.add_argument("seed", type=int, help="Seed for the PRNG.")
+    parser.add_argument("alpha", type=float, help="Infeasibility parameter.")
+    parser.add_argument("--case", action="store_true",
+                        help="Run the case study.")
+    parser.add_argument("--no_vis", action="store_true",
+                        help="Do not add valid inequalities.")
+
+    subparsers = parser.add_subparsers(help="Sub-command help.")
+
+    # For the decomposition.
+    decomp = subparsers.add_parser("decomp", help="Decomposition help.")
+    decomp.set_defaults(func=run_decomp)
+
+    decomp.add_argument("formulation", choices=FORMULATIONS.keys(),
+                        help="Subproblem formulation.")
+
+    # For the root node/VI utility.
+    root = subparsers.add_parser("root", help="Root node help.")
+    root.set_defaults(func=solve_root_relaxation, formulation="SubProblem")
+
+    return parser.parse_args()
+
+
+def run_decomp(master, subs) -> Result:  # noqa: unused-argument
+    return master.solve_decomposition(subs)
+
+
+def solve_root_relaxation(master, subs):  # noqa: unused-argument
+    return master.compute_root_relaxation()
+
 
 def main():
-    pass
+    args = parse_args()
+    np.random.seed(args.seed)
+
+    data = ProblemData.from_file(args.data_loc)
+
+    cls = FORMULATIONS[args.formulation]
+    master = create_master(data, args.alpha, args.no_vis)
+    subs = list(create_subproblems(data, master, cls))
+
+    res = args.func(master, subs)
+    res.to_file(args.res_loc)
+    print(res)
 
 
 if __name__ == "__main__":

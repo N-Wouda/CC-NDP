@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
+from src.utils import JsonStorableMixin
+
 
 @dataclass
-class Result:
+class Result(JsonStorableMixin):
     pass
