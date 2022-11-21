@@ -42,33 +42,23 @@ class MasterProblem:
         ub: list[float] | np.array,
         vname: list[str],
         cname: list[str],
-        alpha: float,
-        N: int,
+        num_scenarios: int,
         **params,
     ):
         logger.info("Creating master problem.")
 
-        self.model = Model("master")
+        self._model = Model("master")
 
         for param, value in (DEFAULT_MASTER_PARAMS | params).items():
             logger.debug(f"Setting {param} = {value}.")
-            self.model.setParam(param, value)
+            self._model.setParam(param, value)
 
-        self.alpha = alpha
-        self.N = N  # number of z variables/subproblems
+        dec_vars = self._model.addMVar((len(c),), lb, ub, c, vtype).tolist()
 
-        dec_vars = self.model.addMVar(
-            shape=(len(c),),
-            lb=lb,  # type: ignore
-            ub=ub,  # type: ignore
-            obj=c,  # type: ignore
-            vtype=vtype,
-        ).tolist()  # type: ignore
+        self._x = dec_vars[:-num_scenarios]
+        self._z = dec_vars[-num_scenarios:]
 
-        self._x = dec_vars[:-N]
-        self._z = dec_vars[-N:]
-
-        constrs = self.model.addMConstrs(A=A, x=None, sense=sense, b=b)
+        constrs = self._model.addMConstrs(A=A, x=None, sense=sense, b=b)
 
         for var, name in zip(dec_vars, vname):
             var.varName = name
@@ -76,7 +66,7 @@ class MasterProblem:
         for constr, name in zip(constrs, cname):
             constr.constrName = name
 
-        self.model.update()
+        self._model.update()
 
     @property
     def c(self) -> np.array:
@@ -89,15 +79,15 @@ class MasterProblem:
         return [var.varName for var in self._x]
 
     def objective(self) -> float:
-        assert self.model.status == GRB.OPTIMAL
-        return self.model.objVal
+        assert self._model.status == GRB.OPTIMAL
+        return self._model.objVal
 
     def add_lazy_cut(self, cut: Cut):
         lhs = LinExpr()
         lhs.addTerms(cut.gamma, self._z[cut.scen])  # type: ignore
         lhs.addTerms(cut.beta, self._x)  # type: ignore
 
-        self.model.cbLazy(lhs >= cut.gamma)
+        self._model.cbLazy(lhs >= cut.gamma)
 
     def solve_decomposition(self, subproblems: list[SubProblem]) -> Result:
         run_times = []

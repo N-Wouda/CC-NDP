@@ -1,8 +1,18 @@
-from abc import ABC
+from __future__ import annotations
+
+import logging
+from abc import ABC, abstractmethod
 
 import numpy as np
+from gurobipy import GRB, MConstr, MVar, Model
+from scipy.sparse import csr_matrix
+
+from src.config import DEFAULT_SUB_PARAMS
 
 from .Cut import Cut
+from .MasterProblem import MasterProblem
+
+logger = logging.getLogger(__name__)
 
 
 class SubProblem(ABC):
@@ -10,20 +20,73 @@ class SubProblem(ABC):
     Abstract base class for a subproblem formulation.
     """
 
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        master: MasterProblem,
+        T: csr_matrix,
+        W: csr_matrix,
+        h: list[float] | np.array,
+        senses: list[str] | np.array,
+        vname: list[str],
+        cname: list[str],
+        scen: int,
+        **params,
+    ):
+        logger.info(f"Creating {self.__class__.__name__} #{scen}.")
+
+        self._T = T
+        self._W = W
+        self._h = np.array(h).reshape((len(h), 1))
+        self._senses = np.array(senses)
+        self._vname = vname
+        self._cname = cname
+        self._scen = scen
+
+        self._model = Model(f"Sub #{self._scen}")
+
+        for param, value in (DEFAULT_SUB_PARAMS | params).items():
+            logger.debug(f"Setting {param} = {value}.")
+            self._model.setParam(param, value)
+
+        self._vars = self._set_vars(master)
+        self._constrs = self._set_constrs(master)
+
+        for var, name in zip(self._vars, self._vname):
+            var.varName = name
+
+        for constr, name in zip(self._constrs, self._cname):
+            constr.constrName = name
+
+        self._model.update()
+
+    @abstractmethod
+    def _set_vars(self, master: MasterProblem) -> MVar:
+        return NotImplemented
+
+    @abstractmethod
+    def _set_constrs(self, master: MasterProblem) -> MConstr:
+        return NotImplemented
 
     def cut(self) -> Cut:
-        pass
+        duals = np.array([constr.pi for constr in self._constrs])
+
+        beta = duals.transpose() @ self._T
+        gamma = float(duals @ self._h)
+
+        return Cut(beta, gamma, self._scen)
 
     def is_feasible(self) -> bool:
-        pass
+        return np.isclose(self.objective(), 0.0)  # type: ignore
 
     def objective(self) -> float:
-        pass
+        assert self._model.status == GRB.OPTIMAL
+        return self._model.objVal
 
     def solve(self):
-        pass
+        self._model.optimize()
 
     def update_rhs(self, x: np.ndarray):
-        pass
+        rhs = self._h - self._T @ x[..., np.newaxis]
+        rhs[rhs < 0] = 0  # is only ever negative due to rounding errors
+
+        self._model.setAttr("RHS", self._constrs, rhs)  # type: ignore

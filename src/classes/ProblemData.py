@@ -19,5 +19,9 @@ class ProblemData(JsonStorableMixin):
     # TODO eta?
 
     @property
+    def num_nodes(self) -> int:
+        return len(self.nodes)
+
+    @property
     def num_edges(self) -> int:
         return len(self.edges)

@@ -4,7 +4,7 @@ from .MasterProblem import MasterProblem
 from .SubProblem import SubProblem
 
 
-class FlowMIS(SubProblem):
+class BB(SubProblem):
     """
     TODO
     """
