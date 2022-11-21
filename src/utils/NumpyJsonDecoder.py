@@ -5,7 +5,6 @@ import numpy as np
 
 
 class NumpyJsonDecoder(json.JSONDecoder):
-
     def __init__(self, *args, **kwargs):
         kwargs["object_hook"] = _object_hook
         super().__init__(*args, **kwargs)

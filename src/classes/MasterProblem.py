@@ -60,8 +60,10 @@ class MasterProblem:
 
         self.model.optimize(callback)  # type: ignore
 
-        return Result(dict(zip(self.decision_names(), self.decisions())),
-                      dict(zip(self.decision_names(), self.c)),
-                      lower_bounds,
-                      incumbent_objs,
-                      np.diff(run_times, prepend=0))  # type: ignore
+        return Result(
+            dict(zip(self.decision_names(), self.decisions())),
+            dict(zip(self.decision_names(), self.c)),
+            lower_bounds,
+            incumbent_objs,
+            np.diff(run_times, prepend=0),
+        )  # type: ignore

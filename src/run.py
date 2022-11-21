@@ -8,14 +8,14 @@ import logging.config
 from argparse import ArgumentParser
 
 import numpy as np
-import yaml
+import yaml  # type: ignore
 
 # Must precede any imports, see https://stackoverflow.com/a/20280587.
 with open("logging.yaml", "r") as file:
     log_settings = yaml.safe_load(file.read())
     logging.config.dictConfig(log_settings)
 
-from src.classes import ProblemData, Result, FORMULATIONS
+from src.classes import FORMULATIONS, ProblemData, Result
 from src.functions import create_master, create_subproblems
 
 
@@ -27,10 +27,12 @@ def parse_args():
     parser.add_argument("res_loc", help="File system result location.")
     parser.add_argument("seed", type=int, help="Seed for the PRNG.")
     parser.add_argument("alpha", type=float, help="Infeasibility parameter.")
-    parser.add_argument("--case", action="store_true",
-                        help="Run the case study.")
-    parser.add_argument("--no_vis", action="store_true",
-                        help="Do not add valid inequalities.")
+    parser.add_argument(
+        "--case", action="store_true", help="Run the case study."
+    )
+    parser.add_argument(
+        "--no_vis", action="store_true", help="Do not add valid inequalities."
+    )
 
     subparsers = parser.add_subparsers(help="Sub-command help.")
 
@@ -38,8 +40,11 @@ def parse_args():
     decomp = subparsers.add_parser("decomp", help="Decomposition help.")
     decomp.set_defaults(func=run_decomp)
 
-    decomp.add_argument("formulation", choices=FORMULATIONS.keys(),
-                        help="Subproblem formulation.")
+    decomp.add_argument(
+        "formulation",
+        choices=FORMULATIONS.keys(),
+        help="Subproblem formulation.",
+    )
 
     # For the root node/VI utility.
     root = subparsers.add_parser("root", help="Root node help.")

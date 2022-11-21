@@ -10,11 +10,13 @@ from .NumpyJsonEncoder import NumpyJsonEncoder
 class JsonStorableMixin(ABC):
     """
     JsonStorableMixin is a mixin class that provides methods to save and load
-    dataclasses to and from the filesystem, where they are stored as JSON files.
+    classes to and from the filesystem, where they are stored as JSON files.
     """
 
     @classmethod
-    def from_file(cls, loc: str, decoder=NumpyJsonDecoder) -> JsonStorableMixin:
+    def from_file(
+        cls, loc: str, decoder=NumpyJsonDecoder
+    ) -> JsonStorableMixin:
         """
         Reads an object from the given location. Assumes the data at the given
         location are JSON-formatted.
