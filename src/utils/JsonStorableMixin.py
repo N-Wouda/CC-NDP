@@ -28,8 +28,7 @@ class JsonStorableMixin(ABC):
 
     def to_file(self, loc: str, encoder=NumpyJsonEncoder):
         """
-        Writes this object as a JSON file  to the given location on the
-        filesystem for persistent storage.
+        Writes this object as JSON to the given location on the filesystem.
         """
         with open(loc, "w") as fh:
             json.dump(vars(self), fh, cls=encoder)

@@ -6,7 +6,16 @@ from .SubProblem import SubProblem
 
 class BB(SubProblem):
     """
-    TODO
+    Basic Benders formulation.
+
+    The model looks something like this:
+
+        min  sum(s)
+        s.t. Wf - Is <= h - Tx
+                f, s >= 0
+
+    given variables x from the master problem. Any keyword arguments are passed
+    to the Gurobi model as parameters.
     """
 
     def _set_vars(self, master: MasterProblem) -> MVar:

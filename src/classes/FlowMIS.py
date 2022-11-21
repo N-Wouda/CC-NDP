@@ -1,16 +1,14 @@
-from gurobipy import MConstr, MVar
+from gurobipy import MConstr
 
 from .MasterProblem import MasterProblem
-from .SubProblem import SubProblem
+from .SNC import SNC
 
 
-class FlowMIS(SubProblem):
+class FlowMIS(SNC):
     """
-    TODO
+    FlowMIS formulation based on SNC. The slack is inserted only into the
+    demand constraint.
     """
-
-    def _set_vars(self, master: MasterProblem) -> MVar:
-        pass
 
     def _set_constrs(self, master: MasterProblem) -> MConstr:
         pass

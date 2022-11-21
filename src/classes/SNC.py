@@ -6,7 +6,15 @@ from .SubProblem import SubProblem
 
 class SNC(SubProblem):
     """
-    TODO
+    Standard normalisation condition (SNC) of Balas 1997.
+
+    The model looks something like this:
+
+        min  s
+        s.t. Wf - s1 <= h - Tx
+                f, s >= 0,
+
+    where s is a scalar variable.
     """
 
     def _set_vars(self, master: MasterProblem) -> MVar:

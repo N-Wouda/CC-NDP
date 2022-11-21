@@ -69,7 +69,7 @@ def main():
 
     cls = FORMULATIONS[args.formulation]
     master = create_master(data, args.alpha, args.no_vis)
-    subs = list(create_subproblems(data, master, cls))
+    subs = create_subproblems(data, master, cls)
 
     res = args.func(master, subs)
     res.to_file(args.res_loc)
