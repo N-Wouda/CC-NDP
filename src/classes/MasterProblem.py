@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import logging
 
 import numpy as np
 from gurobipy import GRB, LinExpr, Model
+from scipy.sparse import csr_matrix
+
+from src.config import DEFAULT_MASTER_PARAMS
 
 from .Cut import Cut
 from .Result import Result
@@ -14,18 +19,85 @@ class MasterProblem:
     """
     Master problem formulation.
 
-    TODO
+    The model looks something like:
+
+        min  c x
+        s.t.      Ax ~ b
+             sum(z) <= alpha N
+             x mixed-integer, z binary
+
+    The variables x in this model are passed to the scenario subproblems.
+
+    Any keyword arguments are passed to the Gurobi model as parameters.
     """
 
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        c: list[float] | np.array,
+        A: csr_matrix,
+        b: list[float] | np.array,
+        sense: list[str] | np.array,
+        vtype: list[str] | np.array,
+        lb: list[float] | np.array,
+        ub: list[float] | np.array,
+        vname: list[str],
+        cname: list[str],
+        alpha: float,
+        N: int,
+        **params,
+    ):
+        logger.info("Creating master problem.")
+
+        self.model = Model("master")
+
+        for param, value in (DEFAULT_MASTER_PARAMS | params).items():
+            logger.debug(f"Setting {param} = {value}.")
+            self.model.setParam(param, value)
+
+        self.alpha = alpha
+        self.N = N  # number of z variables/subproblems
+
+        dec_vars = self.model.addMVar(
+            shape=(len(c),),
+            lb=lb,  # type: ignore
+            ub=ub,  # type: ignore
+            obj=c,  # type: ignore
+            vtype=vtype,
+        ).tolist()  # type: ignore
+
+        self._x = dec_vars[:-N]
+        self._z = dec_vars[-N:]
+
+        constrs = self.model.addMConstrs(A=A, x=None, sense=sense, b=b)
+
+        for var, name in zip(dec_vars, vname):
+            var.varName = name
+
+        for constr, name in zip(constrs, cname):
+            constr.constrName = name
+
+        self.model.update()
+
+    @property
+    def c(self) -> np.array:
+        return np.array([x.obj for x in self._x])
+
+    def decisions(self) -> np.array:
+        return np.array([var.x for var in self._x])
+
+    def decision_names(self) -> list[str]:
+        return [var.varName for var in self._x]
+
+    def objective(self) -> float:
+        assert self.model.status == GRB.OPTIMAL
+        return self.model.objVal
 
     def add_lazy_cut(self, cut: Cut):
         lhs = LinExpr()
         lhs.addTerms(cut.gamma, self._z[cut.scen])  # type: ignore
         lhs.addTerms(cut.beta, self._x)  # type: ignore
 
-        self._model.cbLazy(lhs >= cut.gamma)
+        self.model.cbLazy(lhs >= cut.gamma)
 
     def solve_decomposition(self, subproblems: list[SubProblem]) -> Result:
         run_times = []
@@ -65,5 +137,5 @@ class MasterProblem:
             dict(zip(self.decision_names(), self.c)),
             lower_bounds,
             incumbent_objs,
-            np.diff(run_times, prepend=0),
-        )  # type: ignore
+            np.diff(run_times, prepend=0).tolist(),  # type: ignore
+        )
