@@ -83,6 +83,11 @@ class MasterProblem:
         return self._model.objVal
 
     def add_lazy_cut(self, cut: Cut):
+        """
+        Adds a lazy cut (constraint) to the model. Gurobi's branc-and-bound
+        tree (mostly) respects these new constraints, and uses this to guide
+        the search in deeper nodes.
+        """
         lhs = LinExpr()
         lhs.addTerms(cut.gamma, self._z[cut.scen])  # type: ignore
         lhs.addTerms(cut.beta, self._x)  # type: ignore
@@ -140,6 +145,8 @@ class MasterProblem:
                 sub.solve()
 
                 if not sub.is_feasible():
+                    # The new constraint "cuts off" the current solution x,
+                    # ensuring we do not find that one again.
                     self.add_lazy_cut(sub.cut())
 
         self.model.optimize(callback)  # type: ignore
