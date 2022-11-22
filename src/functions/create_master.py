@@ -7,12 +7,33 @@ def create_master(
     data: ProblemData, alpha: float, include_vi: bool
 ) -> MasterProblem:
     """
-    TODO
+    Creates the master problem.
+
+    Parameters
+    ----------
+    data
+        Problem data instance.
+    alpha
+        Controls the percentage of scenarios that can be infeasible: at least
+        (1 - alpha)% of the scenarios must be feasible.
+    include_vi
+        Whether to include the valid inequalities (VI's) in the model. These
+        are not strictly needed, but help the formulation solve much faster.
+
+    Returns
+    -------
+    MasterProblem
+        The created master problem instance.
     """
     m = Model()
 
+    # Construction decision variables, with costs and variable types as given
+    # by the problem instance.
     m.addMVar((data.num_edges,), obj=data.cost, vtype=data.vtype, name="x")
 
+    # The z variables decide which of the scenarios must be made feasible. If
+    # z_i == 1, scenario i can be infeasible; if z_i == 0, it must be feasible.
+    # At most alpha percent of the scenarios can be infeasible.
     z = m.addMVar((data.num_scenarios,), vtype="B", name="z")
     m.addConstr(z.sum() <= alpha * data.num_scenarios, name="scenarios")
 
