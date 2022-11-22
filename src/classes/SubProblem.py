@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
-from gurobipy import GRB, MConstr, MVar, Model
+from gurobipy import GRB, Constr, Model, Var
 from scipy.sparse import csr_matrix
 
 from src.config import DEFAULT_SUB_PARAMS
@@ -60,11 +60,11 @@ class SubProblem(ABC):
         self._model.update()
 
     @abstractmethod
-    def _set_vars(self, master: MasterProblem) -> MVar:
+    def _set_vars(self, master: MasterProblem) -> list[Var]:
         return NotImplemented
 
     @abstractmethod
-    def _set_constrs(self, master: MasterProblem) -> MConstr:
+    def _set_constrs(self, master: MasterProblem) -> list[Constr]:
         return NotImplemented
 
     def cut(self) -> Cut:

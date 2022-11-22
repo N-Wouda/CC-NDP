@@ -17,6 +17,7 @@ class ProblemData(JsonStorableMixin):
 
     num_scenarios: int
     # TODO eta?
+    # TODO node type?
 
     @property
     def num_nodes(self) -> int:

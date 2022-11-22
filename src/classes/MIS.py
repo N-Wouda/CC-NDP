@@ -1,10 +1,12 @@
-from gurobipy import MConstr, MVar
+import numpy as np
+from gurobipy import Constr
+from scipy.sparse import hstack
 
 from .MasterProblem import MasterProblem
-from .SubProblem import SubProblem
+from .SNC import SNC
 
 
-class MIS(SubProblem):
+class MIS(SNC):
     """
     Minimal infeasible subsystem-type formulation (MIS) of Fischetti et al.
     (2010).
@@ -19,8 +21,10 @@ class MIS(SubProblem):
     1 for each non-zero row of T.
     """
 
-    def _set_vars(self, master: MasterProblem) -> MVar:
-        pass
+    def _set_constrs(self, master: MasterProblem) -> list[Constr]:
+        one = np.ones((self._T.shape[0], 1))
+        one[np.isclose(self._T.sum(axis=1), 0.0)] = 0
 
-    def _set_constrs(self, master: MasterProblem) -> MConstr:
-        pass
+        return self._model.addMConstrs(
+            hstack([self._W, one]), None, self._senses, self._h
+        )
