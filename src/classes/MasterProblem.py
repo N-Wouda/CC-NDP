@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from gurobipy import GRB, LinExpr, Model
@@ -10,7 +11,9 @@ from src.config import DEFAULT_MASTER_PARAMS
 
 from .Cut import Cut
 from .Result import Result
-from .SubProblem import SubProblem
+
+if TYPE_CHECKING:
+    from .SubProblem import SubProblem
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +93,28 @@ class MasterProblem:
         self._model.cbLazy(lhs >= cut.gamma)
 
     def solve_decomposition(self, subproblems: list[SubProblem]) -> Result:
+        """
+        Solves the master/subproblem decomposition with the given subproblems.
+
+        The algorithm uses Gurobi and iteratively adds new constraints/cutting
+        planes via a callback whenever Gurobi finds a new feasible, integer
+        solution (MIPSOL). We also use the callback to register some runtime
+        information, like bounds.
+
+        Parameters
+        ----------
+        subproblems
+            A list of scenario subproblems to solve. The master problem selects
+            which subproblems should be made feasible, and adds new constraints
+            if they are not yet feasible. These new constraints are derived
+            from the (infeasible) subproblems.
+
+        Returns
+        -------
+        Result
+            The result object, containing the optimal decisions and additional
+            information about the solver process.
+        """
         run_times = []
         lower_bounds = []
         incumbent_objs = []
