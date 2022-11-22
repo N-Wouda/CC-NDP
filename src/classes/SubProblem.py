@@ -10,7 +10,6 @@ from scipy.sparse import csr_matrix
 from src.config import DEFAULT_SUB_PARAMS
 
 from .Cut import Cut
-from .MasterProblem import MasterProblem
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,6 @@ class SubProblem(ABC):
 
     def __init__(
         self,
-        master: MasterProblem,
         T: csr_matrix,
         W: csr_matrix,
         h: list[float] | np.array,
@@ -48,8 +46,8 @@ class SubProblem(ABC):
             logger.debug(f"Setting {param} = {value}.")
             self._model.setParam(param, value)
 
-        self._vars = self._set_vars(master)
-        self._constrs = self._set_constrs(master)
+        self._vars = self._set_vars()
+        self._constrs = self._set_constrs()
 
         for var, name in zip(self._vars, self._vname):
             var.varName = name
@@ -60,11 +58,11 @@ class SubProblem(ABC):
         self._model.update()
 
     @abstractmethod
-    def _set_vars(self, master: MasterProblem) -> list[Var]:
+    def _set_vars(self) -> list[Var]:
         return NotImplemented
 
     @abstractmethod
-    def _set_constrs(self, master: MasterProblem) -> list[Constr]:
+    def _set_constrs(self) -> list[Constr]:
         return NotImplemented
 
     def cut(self) -> Cut:

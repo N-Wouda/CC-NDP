@@ -28,9 +28,6 @@ def parse_args():
     parser.add_argument("seed", type=int, help="Seed for the PRNG.")
     parser.add_argument("alpha", type=float, help="Infeasibility parameter.")
     parser.add_argument(
-        "--case", action="store_true", help="Run the case study."
-    )
-    parser.add_argument(
         "--no_vis", action="store_true", help="Do not add valid inequalities."
     )
 
@@ -67,9 +64,8 @@ def main():
 
     data = ProblemData.from_file(args.data_loc)
 
-    cls = FORMULATIONS[args.formulation]
     master = create_master(data, args.alpha, args.no_vis)
-    subs = create_subproblems(data, master, cls)
+    subs = create_subproblems(data, FORMULATIONS[args.formulation])
 
     res = args.func(master, subs)
     res.to_file(args.res_loc)

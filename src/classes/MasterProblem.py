@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 import numpy as np
 from gurobipy import GRB, LinExpr, Model
@@ -11,9 +10,7 @@ from src.config import DEFAULT_MASTER_PARAMS
 
 from .Cut import Cut
 from .Result import Result
-
-if TYPE_CHECKING:
-    from .SubProblem import SubProblem
+from .SubProblem import SubProblem
 
 logger = logging.getLogger(__name__)
 

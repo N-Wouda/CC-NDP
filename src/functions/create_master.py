@@ -37,6 +37,8 @@ def create_master(
     z = m.addMVar((data.num_scenarios,), vtype="B", name="z")
     m.addConstr(z.sum() <= alpha * data.num_scenarios, name="scenarios")
 
+    # TODO add VI's
+
     m.update()
 
     A = m.getA()

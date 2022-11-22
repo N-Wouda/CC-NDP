@@ -2,7 +2,6 @@ import numpy as np
 from gurobipy import Constr
 from scipy.sparse import hstack
 
-from .MasterProblem import MasterProblem
 from .SNC import SNC
 
 
@@ -21,7 +20,7 @@ class MIS(SNC):
     1 for each non-zero row of T.
     """
 
-    def _set_constrs(self, master: MasterProblem) -> list[Constr]:
+    def _set_constrs(self) -> list[Constr]:
         one = np.ones((self._T.shape[0], 1))
         one[np.isclose(self._T.sum(axis=1), 0.0)] = 0
 

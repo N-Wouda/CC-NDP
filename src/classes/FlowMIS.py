@@ -2,7 +2,6 @@ import numpy as np
 from gurobipy import Constr
 from scipy.sparse import hstack
 
-from .MasterProblem import MasterProblem
 from .SNC import SNC
 
 
@@ -12,7 +11,7 @@ class FlowMIS(SNC):
     demand constraint(s), that is, constraints whose names start with "demand".
     """
 
-    def _set_constrs(self, master: MasterProblem) -> list[Constr]:
+    def _set_constrs(self) -> list[Constr]:
         demands = np.array([name.startswith("demand") for name in self._cname])
         demands = demands[..., np.newaxis]
 
