@@ -29,7 +29,7 @@ def create_subproblems(
     for scen in range(data.num_scenarios):
         m = Model()
 
-        x = m.addMVar((data.num_edges), name="x")  # first-stage decisions
+        x = m.addMVar((data.num_edges,), name="x")  # first-stage decisions
         f = ...
 
         # TODO
