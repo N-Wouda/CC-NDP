@@ -229,7 +229,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "f788078e98068ed9fd3fda0b1922cbc8e7e3bdd3c2e51d26fe0196a951017c90"
+content-hash = "4aac95d40e2943811ced9e337aa427d1a66107a58e6adee8b5332fca001c7203"
 
 [metadata.files]
 contourpy = [
