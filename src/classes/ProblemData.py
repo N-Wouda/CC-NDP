@@ -6,7 +6,7 @@ import numpy as np
 from src.utils import JsonStorableMixin
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProblemData(JsonStorableMixin):
     """
     Problem data instance.
@@ -45,6 +45,13 @@ class ProblemData(JsonStorableMixin):
     # TODO eta?
     # TODO node type?
 
+    def __hash__(self) -> int:
+        """
+        Returns a hash based on the size properties of the data instance:
+        number of nodes, number of edges, and the number of scenarios.
+        """
+        return hash((len(self.nodes), len(self.edges), self.num_scenarios))
+
     @property
     def num_nodes(self) -> int:
         return len(self.nodes)
@@ -64,8 +71,16 @@ class ProblemData(JsonStorableMixin):
 
     @cache
     def edge_idcs_from_node(self, node: str) -> list[int]:
-        return [idx for idx, edge in enumerate(self.edges) if edge[0] == node]
+        return [
+            idx
+            for idx, edge in enumerate(self.edges)
+            if edge[0] == f"{node}-out"
+        ]
 
     @cache
     def edge_idcs_to_node(self, node: str) -> list[int]:
-        return [idx for idx, edge in enumerate(self.edges) if edge[1] == node]
+        return [
+            idx
+            for idx, edge in enumerate(self.edges)
+            if edge[1] == f"{node}-in"
+        ]

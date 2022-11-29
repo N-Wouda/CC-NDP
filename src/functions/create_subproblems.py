@@ -34,6 +34,7 @@ def create_subproblems(
 
 
 def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
+    # TODO make this work with in/out edges?
     m = Model()
 
     x = m.addMVar((data.num_edges,), name="x")  # first-stage vars
