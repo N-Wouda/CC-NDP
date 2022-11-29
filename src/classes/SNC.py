@@ -26,7 +26,9 @@ class SNC(SubProblem):
         return f + s
 
     def _set_constrs(self) -> list[Constr]:
-        one = np.ones((self._T.shape[0], 1))
+        sense2sign = {">": 1, "<": -1, "=": 0}
+        one = np.array([sense2sign[sense] for sense in self._senses])
+        one.shape = (len(one), 1)
 
         return self._model.addMConstrs(
             hstack([self._W, one]), None, self._senses, self._h

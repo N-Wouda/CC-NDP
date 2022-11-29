@@ -84,3 +84,11 @@ class ProblemData(JsonStorableMixin):
             for idx, edge in enumerate(self.edges)
             if edge[1] == f"{node}-in"
         ]
+
+    @cache
+    def get_node_edge_index(self, node):
+        for idx, (frm, to) in enumerate(self.edges):
+            if frm == f"{node}-in" and to == f"{node}-out":
+                return idx
+
+        return None

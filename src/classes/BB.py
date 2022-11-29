@@ -28,8 +28,12 @@ class BB(SubProblem):
         return f + s
 
     def _set_constrs(self) -> list[Constr]:
-        return self._model.addMConstr(
-            hstack([self._W, eye(self._W.shape[0])]),
+        sense2sign = {">": 1, "<": -1, "=": 0}
+        identity = eye(self._W.shape[0])
+        identity.setdiag([sense2sign[sense] for sense in self._senses])
+
+        return self._model.addMConstrs(
+            hstack([self._W, identity]),
             None,
             self._senses,
             self._h,

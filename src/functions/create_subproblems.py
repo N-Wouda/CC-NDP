@@ -51,14 +51,19 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
 
     # Balance constraints
     for idx, node in enumerate(data.nodes):
-        incoming = data.edge_idcs_to_node(node)
-        outgoing = data.edge_idcs_from_node(node)
+        if node.startswith("sink"):
+            continue
 
-        if incoming and outgoing:
-            # TODO eta? node type?
-            lhs = f[outgoing].sum()
-            rhs = f[incoming].sum()
-            m.addConstr(lhs <= rhs, name=f"balance[{node}]")
+        # TODO eta? node type?
+        edge_node = f[data.get_node_edge_index(node)]
+
+        if indices_in := data.edge_idcs_to_node(node):
+            incoming = f[indices_in].sum()
+            m.addConstr(edge_node <= incoming, name=f"balance[{node}, in]")
+
+        if indices_out := data.edge_idcs_from_node(node):
+            outgoing = f[indices_out].sum()
+            m.addConstr(outgoing <= edge_node, name=f"balance[{node}, out]")
 
     m.update()
 
