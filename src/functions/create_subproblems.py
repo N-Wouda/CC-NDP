@@ -43,11 +43,11 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     # Demand constraints
     for sink, demand in zip(data.sink_nodes, data.demand[scen]):
         incoming = data.edge_idcs_to_node(sink)
-        m.addConstr(f[incoming].sum() >= demand, f"demand[{sink}]")
+        m.addConstr(f[incoming].sum() >= demand, name=f"demand[{sink}]")
 
     # Capacity constraints
     for x_i, f_i, c, (i, j) in zip(x, f, data.capacity[scen], data.edges):
-        m.addConstr(f_i <= c * x_i, f"capacity[{i}, {j}]")
+        m.addConstr(f_i <= c * x_i, name=f"capacity[{i}, {j}]")
 
     # Balance constraints
     for idx, node in enumerate(data.nodes):
@@ -58,7 +58,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
             # TODO eta? node type?
             lhs = f[outgoing].sum()
             rhs = f[incoming].sum()
-            m.addConstr(lhs <= rhs, f"balance[{node}]")
+            m.addConstr(lhs <= rhs, name=f"balance[{node}]")
 
     m.update()
 
@@ -70,7 +70,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     W = csr_matrix(mat[:, data.num_edges :])
     h = [constr.rhs for constr in constrs]
     senses = [constr.sense for constr in constrs]
-    vname = [var.varName for var in dec_vars[data.num_edges :]]
+    vname = [var.VarName for var in dec_vars[data.num_edges :]]
     cname = [constr.constrName for constr in constrs]
 
     return cls(T, W, h, senses, vname, cname, scen)

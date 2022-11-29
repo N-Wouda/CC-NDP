@@ -29,7 +29,12 @@ def create_master(
 
     # Construction decision variables, with costs and variable types as given
     # by the problem instance.
-    m.addMVar((data.num_edges,), obj=data.cost, vtype=data.vtype, name="x")
+    m.addMVar(
+        (data.num_edges,),
+        obj=data.cost,  # type: ignore
+        vtype=data.vtype,  # type: ignore
+        name=[f"x[{frm}, {to}]" for frm, to in data.edges],  # type: ignore
+    )
 
     # The z variables decide which of the scenarios must be made feasible. If
     # z_i == 1, scenario i can be infeasible; if z_i == 0, it must be feasible.

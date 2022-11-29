@@ -149,7 +149,7 @@ class MasterProblem:
                     # ensuring we do not find that one again.
                     self.add_lazy_cut(sub.cut())
 
-        self.model.optimize(callback)  # type: ignore
+        self._model.optimize(callback)  # type: ignore
 
         return Result(
             dict(zip(self.decision_names(), self.decisions())),

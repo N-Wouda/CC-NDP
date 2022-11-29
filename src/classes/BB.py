@@ -22,10 +22,10 @@ class BB(SubProblem):
 
     def _set_vars(self) -> list[Var]:
         nrow, ncol = self._W.shape
-        self._f = self._model.addMVar((ncol,), name="f").tolist()
-        self._s = self._model.addMVar((nrow,), obj=1, name="s").tolist()
+        f = self._model.addMVar((ncol,), name="f").tolist()
+        s = self._model.addMVar((nrow,), obj=1, name="s").tolist()
 
-        return self._f + self._s
+        return f + s
 
     def _set_constrs(self) -> list[Constr]:
         return self._model.addMConstr(

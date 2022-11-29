@@ -20,10 +20,10 @@ class SNC(SubProblem):
 
     def _set_vars(self) -> list[Var]:
         nrow, ncol = self._W.shape
-        self._f = self._model.addMVar((ncol,)).tolist()
-        self._s = [self._model.addVar(obj=1, name="s")]
+        f = self._model.addMVar((ncol,)).tolist()
+        s = [self._model.addVar(obj=1, name="s")]
 
-        return self._f + self._s
+        return f + s
 
     def _set_constrs(self) -> list[Constr]:
         one = np.ones((self._T.shape[0], 1))
