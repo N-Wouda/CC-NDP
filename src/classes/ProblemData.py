@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from functools import cache, cached_property
 
 import numpy as np
 
 from src.utils import JsonStorableMixin
+
+from .Edge import Edge
+from .Node import Node
 
 
 @dataclass(frozen=True)
@@ -14,36 +16,24 @@ class ProblemData(JsonStorableMixin):
     Parameters
     ----------
     nodes
-        Array of node names.
-    locs
-        Array of node locations, as (x, y) pairs.
+        Array of nodes.
     edges
-        Array of edges, as (from, to) node strings.
-    demand
+        Array of edges.
+    demands
         Array of scenario demands. Rows are scenarios, columns each sink
         demand.
-    capacity
+    capacities
         Array of edge capacities. Rows are scenarios, columns each edge
         capacity.
-    cost
-        Array of edge construction costs.
-    vtype
-        Array of edge construction types. Can be one of 'C', 'B', or 'I'.
     num_scenarios
-        Number of scenarios to consider.
+        Number of scenarios.
     """
 
-    nodes: np.ndarray
-    locs: np.ndarray
-    edges: np.ndarray
-    demand: np.ndarray
-    capacity: np.ndarray
-    cost: np.ndarray
-    vtype: np.ndarray
+    nodes: list[Node]
+    edges: list[Edge]
+    demands: np.ndarray
+    capacities: np.ndarray
     num_scenarios: int
-
-    # TODO eta?
-    # TODO node type?
 
     def __hash__(self) -> int:
         """
@@ -60,35 +50,14 @@ class ProblemData(JsonStorableMixin):
     def num_edges(self) -> int:
         return len(self.edges)
 
-    @cached_property
-    def sink_nodes(self) -> list[str]:
-        """
-        Returns all nodes that have no edges leaving them.
-        """
-        return [
-            node for node in self.nodes if not self.edge_idcs_from_node(node)
-        ]
+    def costs(self) -> np.ndarray:
+        return np.array([edge.cost for edge in self.edges])
 
-    @cache
-    def edge_idcs_from_node(self, node: str) -> list[int]:
-        return [
-            idx
-            for idx, edge in enumerate(self.edges)
-            if edge[0] == f"{node}-out"
-        ]
+    def vtypes(self) -> np.ndarray:
+        return np.array([edge.vtype for edge in self.edges])
 
-    @cache
-    def edge_idcs_to_node(self, node: str) -> list[int]:
-        return [
-            idx
-            for idx, edge in enumerate(self.edges)
-            if edge[1] == f"{node}-in"
-        ]
+    def sources(self) -> list[Node]:
+        return [node for node in self.nodes if node.is_source]
 
-    @cache
-    def get_node_edge_index(self, node):
-        for idx, (frm, to) in enumerate(self.edges):
-            if frm == f"{node}-in" and to == f"{node}-out":
-                return idx
-
-        return None
+    def sinks(self) -> list[Node]:
+        return [node for node in self.nodes if node.is_sink]

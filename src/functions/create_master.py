@@ -32,9 +32,9 @@ def create_master(
     # by the problem instance.
     x = m.addMVar(
         (data.num_edges,),
-        obj=data.cost,  # type: ignore
-        vtype=data.vtype,  # type: ignore
-        name=[f"x[{frm}, {to}]" for frm, to in data.edges],  # type: ignore
+        obj=data.costs,  # type: ignore
+        vtype=data.vtypes,  # type: ignore
+        name=[str(edge) for edge in data.edges],  # type: ignore
     )
 
     # The z variables decide which of the scenarios must be made feasible. If

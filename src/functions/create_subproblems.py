@@ -37,33 +37,33 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     # TODO make this work with in/out edges?
     m = Model()
 
-    x = m.addMVar((data.num_edges,), name="x")  # first-stage vars
-    f = m.addMVar((data.num_edges,), name="f")  # second-stage vars
-
-    # Demand constraints
-    for sink, demand in zip(data.sink_nodes, data.demand[scen]):
-        incoming = data.edge_idcs_to_node(sink)
-        m.addConstr(f[incoming].sum() >= demand, name=f"demand[{sink}]")
-
-    # Capacity constraints
-    for x_i, f_i, c, (i, j) in zip(x, f, data.capacity[scen], data.edges):
-        m.addConstr(f_i <= c * x_i, name=f"capacity[{i}, {j}]")
-
-    # Balance constraints
-    for idx, node in enumerate(data.nodes):
-        if node.startswith("sink"):
-            continue
-
-        # TODO eta? node type?
-        edge_node = f[data.get_node_edge_index(node)]
-
-        if indices_in := data.edge_idcs_to_node(node):
-            incoming = f[indices_in].sum()
-            m.addConstr(edge_node <= incoming, name=f"balance[{node}, in]")
-
-        if indices_out := data.edge_idcs_from_node(node):
-            outgoing = f[indices_out].sum()
-            m.addConstr(outgoing <= edge_node, name=f"balance[{node}, out]")
+    # x = m.addMVar((data.num_edges,), name="x")  # first-stage vars
+    # f = m.addMVar((data.num_edges,), name="f")  # second-stage vars
+    #
+    # # Demand constraints
+    # for sink, demand in zip(data.sinks(), data.demands[scen]):
+    #     incoming = data.edge_idcs_to_node(sink)
+    #     m.addConstr(f[incoming].sum() >= demand, name=f"demand[{sink}]")
+    #
+    # # Capacity constraints
+    # for x_i, f_i, c, (i, j) in zip(x, f, data.capacities[scen], data.edges):
+    #     m.addConstr(f_i <= c * x_i, name=f"capacity[{i}, {j}]")
+    #
+    # # Balance constraints
+    # for idx, node in enumerate(data.nodes):
+    #     if node.is_sink:
+    #         continue
+    #
+    #     # TODO eta? node type?
+    #     edge_node = f[data.get_node_edge_index(node)]
+    #
+    #     if indices_in := data.edge_idcs_to_node(node):
+    #         incoming = f[indices_in].sum()
+    #         m.addConstr(edge_node <= incoming, name=f"balance[{node}, in]")
+    #
+    #     if indices_out := data.edge_idcs_from_node(node):
+    #         outgoing = f[indices_out].sum()
+    #         m.addConstr(outgoing <= edge_node, name=f"balance[{node}, out]")
 
     m.update()
 

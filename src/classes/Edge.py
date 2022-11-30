@@ -11,4 +11,8 @@ class Edge:
     vtype: str
 
     def __str__(self) -> str:
-        return f"({self.frm, self.to})"
+        if self.frm == self.to:
+            # Is some sort of facility, starting and ending in the same point.
+            return self.frm.name
+
+        return f"({self.frm.name, self.to.name})"
