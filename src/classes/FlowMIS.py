@@ -8,7 +8,7 @@ from .SNC import SNC
 class FlowMIS(SNC):
     """
     FlowMIS formulation based on SNC. The slack is inserted only into the
-    demand constraint(s), that is, constraints whose names start with "demand".
+    demand constraints, that is, constraints whose names start with "demand".
     """
 
     def _set_constrs(self) -> list[Constr]:
