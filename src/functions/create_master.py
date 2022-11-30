@@ -4,7 +4,7 @@ from src.classes import MasterProblem, ProblemData
 
 
 def create_master(
-    data: ProblemData, alpha: float, include_vi: bool
+    data: ProblemData, alpha: float, no_vis: bool
 ) -> MasterProblem:
     """
     Creates the master problem.
@@ -16,9 +16,10 @@ def create_master(
     alpha
         Controls the percentage of scenarios that can be infeasible: at least
         (1 - alpha)% of the scenarios must be feasible.
-    include_vi
+    no_vis
         Whether to include the valid inequalities (VI's) in the model. These
         are not strictly needed, but help the formulation solve much faster.
+        If True, VI's are not added; else they are.
 
     Returns
     -------
@@ -42,7 +43,7 @@ def create_master(
     z = m.addMVar((data.num_scenarios,), vtype="B", name="z")
     m.addConstr(z.sum() <= alpha * data.num_scenarios, name="scenarios")
 
-    if include_vi:  # add valid inequalities to the master problem formulation
+    if not no_vis:  # add valid inequalities to the master problem formulation
         pass  # TODO vi's
 
     m.update()
