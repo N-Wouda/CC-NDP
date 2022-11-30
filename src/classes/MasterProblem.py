@@ -84,7 +84,7 @@ class MasterProblem:
 
     def add_lazy_cut(self, cut: Cut):
         """
-        Adds a lazy cut (constraint) to the model. Gurobi's branc-and-bound
+        Adds a lazy cut (constraint) to the model. Gurobi's branch-and-bound
         tree (mostly) respects these new constraints, and uses this to guide
         the search in deeper nodes.
         """
