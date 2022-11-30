@@ -1,4 +1,4 @@
-from gurobipy import Model
+from gurobipy import MVar, Model
 
 from src.classes import MasterProblem, ProblemData
 
@@ -30,7 +30,7 @@ def create_master(
 
     # Construction decision variables, with costs and variable types as given
     # by the problem instance.
-    m.addMVar(
+    x = m.addMVar(
         (data.num_edges,),
         obj=data.cost,  # type: ignore
         vtype=data.vtype,  # type: ignore
@@ -39,12 +39,9 @@ def create_master(
 
     # The z variables decide which of the scenarios must be made feasible. If
     # z_i == 1, scenario i can be infeasible; if z_i == 0, it must be feasible.
-    # At most alpha percent of the scenarios can be infeasible.
     z = m.addMVar((data.num_scenarios,), vtype="B", name="z")
-    m.addConstr(z.sum() <= alpha * data.num_scenarios, name="scenarios")
 
-    if not no_vis:  # add valid inequalities to the master problem formulation
-        pass  # TODO vi's
+    add_constrs(m, data, alpha, no_vis, x, z)
 
     m.update()
 
@@ -64,3 +61,17 @@ def create_master(
     return MasterProblem(
         obj, A, b, senses, vtype, lb, ub, vname, cname, data.num_scenarios
     )
+
+
+def add_constrs(
+    m: Model, data: ProblemData, alpha: float, no_vis: bool, x: MVar, z: MVar
+):
+    # At most alpha percent of the scenarios can be infeasible.
+    m.addConstr(z.sum() <= alpha * data.num_scenarios, name="scenarios")
+
+    # VALID INEQUALITIES ------------------------------------------------------
+
+    if no_vis:  # do not add valid inequalities
+        return
+
+    # TODO add VI's from other repo

@@ -133,3 +133,6 @@ dmypy.json
 
 # Data files
 data/
+
+# PDF-ified notebooks
+notebooks/*.pdf
