@@ -6,23 +6,16 @@ class Node:
     """
     Represents a node in the model graph.
 
-    This class stores the node's name (useful alias), its location in the plain
-    as an (x, y) tuple, and whether this node is a source or a sink in the
-    model graph.
+    This class stores the node's idx and its location in the plain as an (x, y)
+    tuple.
     """
 
-    name: str
+    idx: int
     loc: tuple[float, float]
-    is_source: bool
-    is_sink: bool
 
-    # TODO node type (sum/assembly)
-    # TODO eta?
-    # TODO node number/index?
-
-    def __post_init__(self):
-        if self.is_sink and self.is_source:
-            raise ValueError("Cannot be sink *and* source.")
+    # TODO properties: (here, or on edges?)
+    #  - node type (sum/assembly)
+    #  - eta?
 
     def __str__(self) -> str:
-        return self.name
+        return f"facility[{self.idx}]"

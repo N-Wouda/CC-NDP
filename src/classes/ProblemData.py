@@ -3,9 +3,10 @@ from dataclasses import dataclass
 import numpy as np
 
 from src.utils import JsonStorableMixin
-
 from .Edge import Edge
 from .Node import Node
+from .SinkNode import SinkNode
+from .SourceNode import SourceNode
 
 
 @dataclass(frozen=True)
@@ -22,9 +23,12 @@ class ProblemData(JsonStorableMixin):
     demands
         Array of scenario demands. Rows are scenarios, columns each sink
         demand.
-    capacities
-        Array of edge capacities. Rows are scenarios, columns each edge
+    fix_capacities
+        Array of fixed edge capacities. Rows are scenarios, columns each edge
         capacity.
+    var_capacities
+        Array of variable edge capacities. Rows are scenarios, columns each
+        edge capacity.
     num_scenarios
         Number of scenarios.
     """
@@ -32,7 +36,8 @@ class ProblemData(JsonStorableMixin):
     nodes: list[Node]
     edges: list[Edge]
     demands: np.ndarray
-    capacities: np.ndarray
+    fix_capacities: np.ndarray
+    var_capacities: np.ndarray
     num_scenarios: int
 
     def __hash__(self) -> int:
@@ -57,7 +62,7 @@ class ProblemData(JsonStorableMixin):
         return np.array([edge.vtype for edge in self.edges])
 
     def sources(self) -> list[Node]:
-        return [node for node in self.nodes if node.is_source]
+        return [node for node in self.nodes if isinstance(node, SourceNode)]
 
     def sinks(self) -> list[Node]:
-        return [node for node in self.nodes if node.is_sink]
+        return [node for node in self.nodes if isinstance(node, SinkNode)]

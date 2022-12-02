@@ -7,6 +7,8 @@ from .Node import Node
 from .ProblemData import ProblemData
 from .Result import Result
 from .SNC import SNC
+from .SinkNode import SinkNode
+from .SourceNode import SourceNode
 from .SubProblem import SubProblem
 
 FORMULATIONS = {
