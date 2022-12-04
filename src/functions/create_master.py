@@ -32,8 +32,8 @@ def create_master(
     # by the problem instance.
     x = m.addMVar(
         (data.num_edges,),
-        obj=data.costs,  # type: ignore
-        vtype=data.vtypes,  # type: ignore
+        obj=data.costs(),  # type: ignore
+        vtype=data.vtypes(),  # type: ignore
         name=[str(edge) for edge in data.edges],  # type: ignore
     )
 

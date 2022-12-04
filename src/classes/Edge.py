@@ -22,7 +22,7 @@ class Edge:
     vtype: str
 
     def __str__(self) -> str:
-        if self.frm == self.to:
+        if str(self.frm) == str(self.to):
             # Is some sort of facility, starting and ending in the same point.
             return str(self.frm)
 

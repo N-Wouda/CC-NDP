@@ -45,7 +45,7 @@ def parse_args():
 
     # For the root node/VI utility.
     root = subparsers.add_parser("root", help="Root node help.")
-    root.set_defaults(func=solve_root_relaxation, formulation="SubProblem")
+    root.set_defaults(func=solve_root_relaxation, formulation="BB")
 
     return parser.parse_args()
 
