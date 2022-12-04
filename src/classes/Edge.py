@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import numpy as np
+
 from .Node import Node
 
 
@@ -9,12 +11,14 @@ class Edge:
     Represents an edge in the model graph.
 
     This class stores the (start, end) nodes that this edge connects, the cost
-    of constructing this edge, and the variable type of this edge.
+    of constructing this edge, its (variable) capacity per scenario, and the
+    variable type of this edge.
     """
 
     frm: Node
     to: Node
     cost: float
+    capacity: np.array  # capacity per scenario
     vtype: str
 
     def __str__(self) -> str:
