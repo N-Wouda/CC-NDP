@@ -1,5 +1,6 @@
 from typing import Type
 
+import numpy as np
 from gurobipy import Model
 from scipy.sparse import csr_matrix
 
@@ -34,36 +35,39 @@ def create_subproblems(
 
 
 def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
-    # TODO make this work with in/out edges?
+    sources = data.sources()
+    sinks = data.sinks()
+
+    supply = np.array([src.supply[scen] for src in sources])
+    demand = np.array([sink.demand[scen] for sink in sinks])
+
+    # Constructed by master problem
+    num_x_edges = data.num_edges
+
+    # Constructed + artificial in subproblem
+    num_f_edges = num_x_edges + len(sources) + len(sinks) + 1
+
     m = Model()
 
-    # x = m.addMVar((data.num_edges,), name="x")  # first-stage vars
-    # f = m.addMVar((data.num_edges,), name="f")  # second-stage vars
-    #
-    # # Demand constraints
-    # for sink, demand in zip(data.sinks(), data.demands[scen]):
-    #     incoming = data.edge_idcs_to_node(sink)
-    #     m.addConstr(f[incoming].sum() >= demand, name=f"demand[{sink}]")
-    #
-    # # Capacity constraints
-    # for x_i, f_i, c, (i, j) in zip(x, f, data.capacities[scen], data.edges):
-    #     m.addConstr(f_i <= c * x_i, name=f"capacity[{i}, {j}]")
-    #
-    # # Balance constraints
-    # for idx, node in enumerate(data.nodes):
-    #     if node.is_sink:
-    #         continue
-    #
-    #     # TODO eta? node type?
-    #     edge_node = f[data.get_node_edge_index(node)]
-    #
-    #     if indices_in := data.edge_idcs_to_node(node):
-    #         incoming = f[indices_in].sum()
-    #         m.addConstr(edge_node <= incoming, name=f"balance[{node}, in]")
-    #
-    #     if indices_out := data.edge_idcs_from_node(node):
-    #         outgoing = f[indices_out].sum()
-    #         m.addConstr(outgoing <= edge_node, name=f"balance[{node}, out]")
+    x = m.addMVar((num_x_edges,), name="x")  # first-stage vars
+    f = m.addMVar((num_f_edges,), name="f")  # second-stage vars
+    f_ts = f[-1]  # reverse, (t, s) arc.
+
+    # Capacity constraints (for "x decisions")
+    for x_i, f_i, edge in zip(x, f, data.edges):
+        m.addConstr(f_i <= edge.capacity[scen] * x_i, name=f"capacity[{edge}]")
+
+    # Capacity constraints for artificial variables (only for sinks to t)
+    for idx in range(len(sinks)):
+        d = demand[idx]
+        f_i = f[-idx - 2]
+        m.addConstr(f_i <= d, name=f"capacity[(sink{idx}, t)]")
+
+    # Balance constraints
+    # TODO
+
+    # Demand constraint
+    m.addConstr(f_ts >= demand.sum(), name="demand")
 
     m.update()
 
