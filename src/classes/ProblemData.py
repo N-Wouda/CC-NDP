@@ -50,6 +50,12 @@ class ProblemData(JsonStorableMixin):
     def vtypes(self) -> np.ndarray:
         return np.array([edge.vtype for edge in self.edges])
 
+    def edge_indices_from(self, node: Node) -> list[int]:
+        return [idx for idx, edge in enumerate(self.edges) if edge.frm == node]
+
+    def edge_indices_to(self, node: Node) -> list[int]:
+        return [idx for idx, edge in enumerate(self.edges) if edge.to == node]
+
     def sources(self) -> list[SourceNode]:
         return [node for node in self.nodes if isinstance(node, SourceNode)]
 

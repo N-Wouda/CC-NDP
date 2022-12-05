@@ -17,5 +17,8 @@ class Node:
     #  - node type (sum/assembly)
     #  - eta?
 
+    def __eq__(self, other):
+        return isinstance(other, Node) and str(other) == str(self)
+
     def __str__(self) -> str:
         return f"facility[{self.idx}]"

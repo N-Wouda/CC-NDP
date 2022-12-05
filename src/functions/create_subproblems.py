@@ -4,7 +4,7 @@ import numpy as np
 from gurobipy import Model
 from scipy.sparse import csr_matrix
 
-from src.classes import ProblemData, SubProblem
+from src.classes import ProblemData, SinkNode, SourceNode, SubProblem
 
 
 def create_subproblems(
@@ -45,29 +45,35 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     num_x_edges = data.num_edges
 
     # Constructed + artificial in subproblem
-    num_f_edges = num_x_edges + len(sources) + len(sinks) + 1
+    num_f_edges = num_x_edges + len(sources) + len(sinks)
 
     m = Model()
 
     x = m.addMVar((num_x_edges,), name="x")  # first-stage vars
     f = m.addMVar((num_f_edges,), name="f")  # second-stage vars
-    f_ts = f[-1]  # reverse, (t, s) arc.
 
-    # Capacity constraints (for "x decisions")
+    # Capacity constraints (only for "x decisions" from the first stage)
     for x_i, f_i, edge in zip(x, f, data.edges):
-        m.addConstr(f_i <= edge.capacity[scen] * x_i, name=f"capacity[{edge}]")
-
-    # Capacity constraints for artificial variables (only for sinks to t)
-    for idx in range(len(sinks)):
-        d = demand[idx]
-        f_i = f[-idx - 2]
-        m.addConstr(f_i <= d, name=f"capacity[(sink{idx}, t)]")
+        m.addConstr(f_i <= edge.capacity[scen] * x_i, name=f"capacity{edge}")
 
     # Balance constraints
-    # TODO
+    for node in data.nodes:
+        # TODO make this work with facility edges/construction decisions at
+        #  the nodes
+        f_in = f[data.edge_indices_to(node)]
+        f_out = f[data.edge_indices_from(node)]
 
-    # Demand constraint
-    m.addConstr(f_ts >= demand.sum(), name="demand")
+        if isinstance(node, SourceNode):
+            f_in = [f[-len(sinks) - node.idx - 1]]
+
+        if isinstance(node, SinkNode):
+            f_out = [f[-node.idx - 1]]
+
+        m.addConstr(np.sum(f_out) <= np.sum(f_in), name=f"balance({node})")
+
+    # Demand constraints (from each sink node to the "artificial sink" t)
+    for idx, f_i, d in zip(range(len(sinks)), f[-len(sinks) :], demand):
+        m.addConstr(f_i >= d, name=f"demand(sink{idx}, t)")
 
     m.update()
 
