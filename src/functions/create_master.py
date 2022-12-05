@@ -146,4 +146,4 @@ def add_constrs(
         # scenario we make feasible.
         m.addConstr(lhs >= rhs, name=f"scen[{scen}] supply")
 
-    # TODO layer capacity
+    # TODO layer capacity (see other repository for some pointers)
