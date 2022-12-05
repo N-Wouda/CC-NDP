@@ -61,7 +61,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
             # For sinks there's only the balance constraint at the sink node,
             # there's no additional construction at the node itself.
             f_out = [f[-node.idx - 1]]
-            m.addConstr(sum(f_out) <= sum(f_in), name=f"balance({node})")
+            m.addConstr(sum(f_out) == sum(f_in), name=f"balance({node})")
             continue
 
         if isinstance(node, SourceNode):
@@ -73,8 +73,8 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
 
         # Two constraints, one for the flow into the node, and one for the
         # flow out of it.
-        m.addConstr(edge_node <= sum(f_in), name=f"balance({node}, in)")
-        m.addConstr(sum(f_out) <= edge_node, name=f"balance({node}, out)")
+        m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
+        m.addConstr(sum(f_out) == edge_node, name=f"balance({node}, out)")
 
     # Demand constraints (from each sink node to the "artificial sink" t)
     demand = np.array([sink.demand[scen] for sink in sinks])

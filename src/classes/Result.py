@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from src.utils import JsonStorableMixin
@@ -32,6 +35,60 @@ class Result(JsonStorableMixin):
         Total run-time (wall-time, in seconds) for the entire algorithm.
         """
         return sum(self.run_times)
+
+    def plot_convergence(self, ax: plt.Axes | None = None):
+        """
+        Plots the steps towards solution. Should hopefully show convergence.
+        """
+        if ax is None:
+            _, ax = plt.subplots(figsize=(12, 8))
+
+        bounds = np.array(self.bounds)
+        num_to_skip = np.count_nonzero(bounds < 0)  # first few are -inf
+
+        times = np.cumsum(self.run_times)[num_to_skip:]
+
+        lb = self.bounds[num_to_skip:]
+        curr = self.objectives[num_to_skip:]
+
+        ax.plot(times, lb, "o-", label="Lower bound")
+        ax.plot(times, curr, "o-", label="Solution")
+        ax.plot(
+            times[-1], self.objective, "r*", markersize=18, label="Optimal"
+        )
+
+        ax.set_xlim(left=0)
+
+        ax.set_xlabel("Run-time (s)")
+        ax.set_ylabel("Objective")
+        ax.set_title("Convergence plot")
+
+        ax.legend(
+            frameon=False, title=f"N = {len(self.bounds)}", loc="lower right"
+        )
+
+        plt.tight_layout()
+        plt.draw_if_interactive()
+
+    def plot_runtimes(self, ax: plt.Axes | None = None):
+        if ax is None:
+            _, ax = plt.subplots(figsize=(12, 4))
+
+        x = 1 + np.arange(self.num_iters)
+        ax.plot(x, self.run_times)
+
+        if self.num_iters > 1:
+            b, c = np.polyfit(x, self.run_times, 1)  # noqa
+            ax.plot(b * x + c)
+
+        ax.set_xlim(left=0)
+
+        ax.set_xlabel("Iteration")
+        ax.set_ylabel("Run-time (s)")
+        ax.set_title("Run-time per iteration")
+
+        plt.tight_layout()
+        plt.draw_if_interactive()
 
     def __str__(self):
         summary = [
