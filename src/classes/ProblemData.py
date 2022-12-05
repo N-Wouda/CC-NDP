@@ -78,6 +78,13 @@ class ProblemData(JsonStorableMixin):
     def sources(self) -> list[SourceNode]:
         return [node for node in self.nodes if isinstance(node, SourceNode)]
 
+    def facilities(self) -> list[Node]:
+        return [
+            node
+            for node in self.nodes
+            if not isinstance(node, (SourceNode, SinkNode))
+        ]
+
     def sinks(self) -> list[SinkNode]:
         return [node for node in self.nodes if isinstance(node, SinkNode)]
 
