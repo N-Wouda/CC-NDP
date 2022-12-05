@@ -51,10 +51,25 @@ class ProblemData(JsonStorableMixin):
         return np.array([edge.vtype for edge in self.edges])
 
     def edge_indices_from(self, node: Node) -> list[int]:
-        return [idx for idx, edge in enumerate(self.edges) if edge.frm == node]
+        return [
+            idx
+            for idx, edge in enumerate(self.edges)
+            if edge.frm == node and edge.to != node
+        ]
 
     def edge_indices_to(self, node: Node) -> list[int]:
-        return [idx for idx, edge in enumerate(self.edges) if edge.to == node]
+        return [
+            idx
+            for idx, edge in enumerate(self.edges)
+            if edge.to == node and edge.frm != node
+        ]
+
+    def edge_index_of(self, pair: tuple[Node, Node]) -> int:
+        for idx, edge in enumerate(self.edges):
+            if pair == (edge.frm, edge.to):
+                return idx
+
+        raise LookupError(f"Could not find edge {pair} in the edge set.")
 
     def sources(self) -> list[SourceNode]:
         return [node for node in self.nodes if isinstance(node, SourceNode)]

@@ -24,6 +24,6 @@ class Edge:
     def __str__(self) -> str:
         if str(self.frm) == str(self.to):
             # Is some sort of facility, starting and ending in the same point.
-            return f"({self.frm})"
+            return f"{self.frm}"
 
-        return f"({self.frm}, {self.to})"
+        return f"{self.frm} -> {self.to}"

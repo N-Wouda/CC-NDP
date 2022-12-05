@@ -31,13 +31,18 @@ def object_hook(obj: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def val2node(val: dict) -> Node:
+    idx = int(val.pop("idx"))
+
+    x, y = val.pop("loc")
+    loc = (float(x), float(y))
+
     if "supply" in val:
-        return SourceNode(**val)
+        return SourceNode(idx, loc, **val)
 
     if "demand" in val:
-        return SinkNode(**val)
+        return SinkNode(idx, loc, **val)
 
-    return Node(**val)
+    return Node(idx, loc)
 
 
 def val2edge(val: dict) -> Edge:

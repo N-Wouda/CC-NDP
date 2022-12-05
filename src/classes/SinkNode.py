@@ -13,5 +13,8 @@ class SinkNode(Node):
 
     demand: np.array
 
+    def __eq__(self, other):
+        return isinstance(other, SinkNode) and str(other) == str(self)
+
     def __str__(self) -> str:
         return f"sink[{self.idx}]"

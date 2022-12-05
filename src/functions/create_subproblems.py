@@ -35,17 +35,12 @@ def create_subproblems(
 
 
 def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
-    sources = data.sources()
-    sinks = data.sinks()
-
-    supply = np.array([src.supply[scen] for src in sources])
-    demand = np.array([sink.demand[scen] for sink in sinks])
-
     # Constructed by master problem
     num_x_edges = data.num_edges
 
     # Constructed + artificial in subproblem
-    num_f_edges = num_x_edges + len(sources) + len(sinks)
+    sinks = data.sinks()
+    num_f_edges = num_x_edges + len(data.sources()) + len(sinks)
 
     m = Model()
 
@@ -58,20 +53,31 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
 
     # Balance constraints
     for node in data.nodes:
-        # TODO make this work with facility edges/construction decisions at
-        #  the nodes
+        # TODO eta? node type?
         f_in = f[data.edge_indices_to(node)]
         f_out = f[data.edge_indices_from(node)]
 
+        if isinstance(node, SinkNode):
+            # For sinks there's only the balance constraint at the sink node,
+            # there's no additional construction at the node itself.
+            f_out = [f[-node.idx - 1]]
+            m.addConstr(sum(f_out) <= sum(f_in), name=f"balance({node})")
+            continue
+
         if isinstance(node, SourceNode):
+            # The inflow is the arc from the "artificial source" s.
             f_in = [f[-len(sinks) - node.idx - 1]]
 
-        if isinstance(node, SinkNode):
-            f_out = [f[-node.idx - 1]]
+        # This edge is flow through the node itself.
+        edge_node = f[data.edge_index_of((node, node))]
 
-        m.addConstr(np.sum(f_out) <= np.sum(f_in), name=f"balance({node})")
+        # Two constraints, one for the flow into the node, and one for the
+        # flow out of it.
+        m.addConstr(edge_node <= sum(f_in), name=f"balance({node}, in)")
+        m.addConstr(sum(f_out) <= edge_node, name=f"balance({node}, out)")
 
     # Demand constraints (from each sink node to the "artificial sink" t)
+    demand = np.array([sink.demand[scen] for sink in sinks])
     for idx, f_i, d in zip(range(len(sinks)), f[-len(sinks) :], demand):
         m.addConstr(f_i >= d, name=f"demand(sink{idx}, t)")
 

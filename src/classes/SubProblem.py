@@ -84,7 +84,6 @@ class SubProblem(ABC):
         self._model.optimize()
 
     def update_rhs(self, x: np.ndarray):
-        # TODO maybe pad x?
         rhs = self._h - self._T @ x[..., np.newaxis]
         rhs[rhs < 0] = 0  # is only ever negative due to rounding errors
 

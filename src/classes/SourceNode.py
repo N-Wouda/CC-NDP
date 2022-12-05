@@ -13,5 +13,8 @@ class SourceNode(Node):
 
     supply: np.array
 
+    def __eq__(self, other):
+        return isinstance(other, SourceNode) and str(other) == str(self)
+
     def __str__(self) -> str:
         return f"source[{self.idx}]"
