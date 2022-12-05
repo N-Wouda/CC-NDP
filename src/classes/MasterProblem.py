@@ -10,6 +10,7 @@ from src.config import DEFAULT_MASTER_PARAMS
 
 from .Cut import Cut
 from .Result import Result
+from .RootResult import RootResult
 from .SubProblem import SubProblem
 
 logger = logging.getLogger(__name__)
@@ -93,6 +94,33 @@ class MasterProblem:
         lhs.addTerms(cut.beta, self._x)  # type: ignore
 
         self._model.cbLazy(lhs >= cut.gamma)
+
+    def compute_root_relaxation(self) -> RootResult:
+        """
+        Computes the root relaxations, that is, the value of the LP or MIP
+        solution at the root node.
+        """
+        logger.info("Computing LP root relaxation.")
+
+        self._model.reset()
+        relax = self._model.relax()
+        relax.optimize()
+
+        assert relax.status == GRB.OPTIMAL
+
+        logger.info("Computing MIP root relaxation.")
+
+        self._model.reset()
+        self._model.optimize()
+
+        assert self._model.status == GRB.OPTIMAL
+
+        return RootResult(
+            relax.runTime,
+            relax.objVal,
+            self._model.runTime,
+            self._model.objVal,
+        )
 
     def solve_decomposition(self, subproblems: list[SubProblem]) -> Result:
         """
