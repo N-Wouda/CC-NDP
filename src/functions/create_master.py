@@ -97,33 +97,35 @@ def add_constrs(
         # Facility capacity should not exceed inflow along edges.
         m.addConstr(
             x[fac_edge_idx] <= x[edge_indices_to_fac].sum(),
-            name="facility agg inflow",
+            name=f"{fac} agg inflow",
         )
 
         for edge_idx in edge_indices_to_fac:
             # Similarly, an individual edge should not exceed the capacity of
             # the facility target.
-            m.addConstr(x[edge_idx] <= x[fac_edge_idx], name="facility inflow")
+            m.addConstr(x[edge_idx] <= x[fac_edge_idx], name=f"{fac} inflow")
 
         # Facility capacity should not exceed outflow along edges.
         m.addConstr(
             x[fac_edge_idx] <= x[edge_indices_from_fac].sum(),
-            name="facility agg outflow",
+            name=f"{fac} agg outflow",
         )
 
         for edge_idx in edge_indices_from_fac:
             # Similarly, an edge need not be bigger than the attached facility.
-            m.addConstr(
-                x[edge_idx] <= x[fac_edge_idx], name="facility outflow"
-            )
+            m.addConstr(x[edge_idx] <= x[fac_edge_idx], name=f"{fac} outflow")
 
     for sink in data.sinks():
         edge_indices_to_sink = data.edge_indices_to(sink)
+        facilities = {data.edges[idx].frm for idx in edge_indices_to_sink}
+        fac_indices = [data.edge_index_of((fac, fac)) for fac in facilities]
 
         for edge_idx in edge_indices_to_sink:
             # There is no point in having individual edges capacities exceeding
             # the demand they need to supply.
-            m.addConstr(x[edge_idx] <= sink.demand.max(), name="sink demand")
+            m.addConstr(
+                x[edge_idx] <= sink.demand.max(), name=f"{sink} demand"
+            )
 
         for scen in range(data.num_scenarios):
             # All edges into customers should together be sufficient to meet
@@ -131,7 +133,15 @@ def add_constrs(
             d = sink.demand[scen]
             m.addConstr(
                 x[edge_indices_to_sink].sum() >= (1 - z[scen]) * d,
-                name="sink edge capacity",
+                name=f"{sink} edge capacity",
+            )
+
+            # Capacity of all facilities feeding into this consumer should be
+            # sufficient to meet demand at the consumer in each feasible
+            # scenario.
+            m.addConstr(
+                x[fac_indices].sum() >= (1 - z[scen]) * d,
+                name=f"{sink} upstream facility capacity",
             )
 
     for scen in range(data.num_scenarios):

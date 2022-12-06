@@ -6,6 +6,7 @@ from .MasterProblem import MasterProblem
 from .Node import Node
 from .ProblemData import ProblemData
 from .Result import Result
+from .RootResult import RootResult
 from .SNC import SNC
 from .SinkNode import SinkNode
 from .SourceNode import SourceNode

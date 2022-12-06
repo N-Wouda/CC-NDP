@@ -26,8 +26,6 @@ def create_subproblems(
         List of created subproblems. These are instance of the ``cls`` passed
         into this function.
     """
-    # TODO only call Gurobi once; it is fairly slow. Instead update matrices
-    #  directly.
     return [
         _create_subproblem(data, cls, scen)
         for scen in range(data.num_scenarios)

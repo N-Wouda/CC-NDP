@@ -15,7 +15,7 @@ with open("logging.yaml", "r") as file:
     log_settings = yaml.safe_load(file.read())
     logging.config.dictConfig(log_settings)
 
-from src.classes import FORMULATIONS, ProblemData, Result
+from src.classes import FORMULATIONS, ProblemData, Result, RootResult
 from src.functions import create_master, create_subproblems
 
 
@@ -31,7 +31,7 @@ def parse_args():
         "--no_vis", action="store_true", help="Do not add valid inequalities."
     )
 
-    subparsers = parser.add_subparsers(help="Sub-command help.")
+    subparsers = parser.add_subparsers(dest="command")
 
     # For the decomposition.
     decomp = subparsers.add_parser("decomp", help="Decomposition help.")
@@ -45,16 +45,16 @@ def parse_args():
 
     # For the root node/VI utility.
     root = subparsers.add_parser("root", help="Root node help.")
-    root.set_defaults(func=solve_root_relaxation, formulation="BB")
+    root.set_defaults(func=run_root_relaxation)
 
     return parser.parse_args()
 
 
-def run_decomp(master, subs) -> Result:  # noqa: unused-argument
+def run_decomp(master, subs) -> Result:
     return master.solve_decomposition(subs)
 
 
-def solve_root_relaxation(master, subs):  # noqa: unused-argument
+def run_root_relaxation(master, subs) -> RootResult:  # noqa: unused-argument
     return master.compute_root_relaxation()
 
 
@@ -65,7 +65,10 @@ def main():
     data = ProblemData.from_file(args.data_loc)
 
     master = create_master(data, args.alpha, args.no_vis)
-    subs = create_subproblems(data, FORMULATIONS[args.formulation])
+    subs = []
+
+    if args.command == "decomp":  # only needed when solving the decomposition
+        subs = create_subproblems(data, FORMULATIONS[args.formulation])
 
     res = args.func(master, subs)
     res.to_file(args.res_loc)
