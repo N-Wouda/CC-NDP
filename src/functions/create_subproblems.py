@@ -39,7 +39,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     # Constructed + artificial in subproblem
     sources = data.sources()
     sinks = data.sinks()
-    num_f_edges = num_x_edges + len(sources) + len(sinks) + 1
+    num_f_edges = num_x_edges + len(sources) + len(sinks)
 
     m = Model()
 
@@ -52,8 +52,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     # from sinks in the actual graph to the artificial sink t, and f_t the
     # collected flow at t.
     f_source = f[num_x_edges : num_x_edges + len(sources)]
-    f_sink = f[-len(sinks) - 1 : -1]
-    f_t = f[-1]
+    f_sink = f[-len(sinks) :]
 
     # Capacity constraints for "x decisions" from the first stage.
     for x_i, f_i, edge in zip(x, f, data.edges):
@@ -88,9 +87,8 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
         m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
         m.addConstr(sum(f_out) == edge_node, name=f"balance({node}, out)")
 
-    # Balance and demand constraint around the "artificial sink" t.
-    m.addConstr(f_sink.sum() == f_t, name="balance(t)")
-    m.addConstr(f_t >= demand.sum(), name="demand(t)")
+    # Demand constraint at the "artificial sink" t.
+    m.addConstr(f_sink.sum() >= demand.sum(), name="demand(t)")
 
     m.update()
 
