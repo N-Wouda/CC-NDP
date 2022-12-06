@@ -37,17 +37,32 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     num_x_edges = data.num_edges
 
     # Constructed + artificial in subproblem
+    sources = data.sources()
     sinks = data.sinks()
-    num_f_edges = num_x_edges + len(data.sources()) + len(sinks)
+    num_f_edges = num_x_edges + len(sources) + len(sinks) + 1
 
     m = Model()
 
     x = m.addMVar((num_x_edges,), name="x")  # first-stage vars
     f = m.addMVar((num_f_edges,), name="f")  # second-stage vars
 
-    # Capacity constraints (only for "x decisions" from the first stage)
+    # Subsets of the flow variables related to the artificial edges and nodes
+    # inserted into the network flow graph. f_source are all flows from the
+    # artificial source s to the sources in the actual graph, f_sink all flows
+    # from sinks in the actual graph to the artificial sink t, and f_t the
+    # collected flow at t.
+    f_source = f[num_x_edges : num_x_edges + len(sources)]
+    f_sink = f[-len(sinks) - 1 : -1]
+    f_t = f[-1]
+
+    # Capacity constraints for "x decisions" from the first stage.
     for x_i, f_i, edge in zip(x, f, data.edges):
         m.addConstr(f_i <= edge.capacity[scen] * x_i, name=f"capacity{edge}")
+
+    # Capacity constraints (from each sink node to the "artificial sink" t).
+    demand = np.array([sink.demand[scen] for sink in sinks])
+    for idx, f_i, d in zip(range(len(sinks)), f_sink, demand):
+        m.addConstr(f_i <= d, name=f"capacity(sink{idx}, t)")
 
     # Balance constraints
     for node in data.nodes:
@@ -58,13 +73,12 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
         if isinstance(node, SinkNode):
             # For sinks there's only the balance constraint at the sink node,
             # there's no additional construction at the node itself.
-            f_out = [f[-node.idx - 1]]
-            m.addConstr(sum(f_out) == sum(f_in), name=f"balance({node})")
+            m.addConstr(f_sink[node.idx] == sum(f_in), name=f"balance({node})")
             continue
 
         if isinstance(node, SourceNode):
             # The inflow is the arc from the "artificial source" s.
-            f_in = [f[-len(sinks) - node.idx - 1]]
+            f_in = [f_source[node.idx]]
 
         # This edge is flow through the node itself.
         edge_node = f[data.edge_index_of((node, node))]
@@ -74,10 +88,9 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
         m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
         m.addConstr(sum(f_out) == edge_node, name=f"balance({node}, out)")
 
-    # Demand constraints (from each sink node to the "artificial sink" t)
-    demand = np.array([sink.demand[scen] for sink in sinks])
-    for idx, f_i, d in zip(range(len(sinks)), f[-len(sinks) :], demand):
-        m.addConstr(f_i >= d, name=f"demand(sink{idx}, t)")
+    # Balance and demand constraint around the "artificial sink" t.
+    m.addConstr(f_sink.sum() == f_t, name="balance(t)")
+    m.addConstr(f_t >= demand.sum(), name="demand(t)")
 
     m.update()
 
