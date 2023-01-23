@@ -31,7 +31,7 @@ def parse_args():
         "--no_vis", action="store_true", help="Do not add valid inequalities."
     )
 
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
     # For the decomposition.
     decomp = subparsers.add_parser("decomp", help="Decomposition help.")
