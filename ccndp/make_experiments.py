@@ -11,8 +11,8 @@ import numpy as np
 from pyDOE2 import fullfact
 from scipy.spatial import distance
 
-from src.classes import Edge, Node, ProblemData, SinkNode, SourceNode
-from src.functions import pairwise
+from ccndp.classes import Edge, Node, ProblemData, SinkNode, SourceNode
+from ccndp.functions import pairwise
 
 
 def parameter_levels() -> dict[str, list]:
@@ -33,9 +33,10 @@ def make_and_write_experiment(
 
     # Node sets: sources, facilities, and sinks
     indices = range(num_nodes)
-    sources = list(map(SourceNode, indices, locs, supply))
-    facilities = list(map(Node, indices, locs[num_nodes:]))
-    sinks = list(map(SinkNode, indices, locs[2 * num_nodes :], demand))
+    types = ["SUM"] * num_nodes
+    sources = list(map(SourceNode, indices, locs, types, supply))
+    facilities = list(map(Node, indices, locs[num_nodes:], types))
+    sinks = list(map(SinkNode, indices, locs[2 * num_nodes :], types, demand))
     nodes = sources + facilities + sinks
 
     layers = np.array_split(facilities, num_layers)

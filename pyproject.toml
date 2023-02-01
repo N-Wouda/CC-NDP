@@ -3,6 +3,15 @@ name = "CC-NDP"
 version = "1.0.0"
 description = "Chance-constrained network design problem"
 authors = ["Niels Wouda <n.a.wouda@rug.nl>"]
+license = "MIT"
+repository = "https://github.com/N-Wouda/CC-NDP"
+include=[
+    "LICENSE",
+    "README.md"
+]
+packages = [
+    { include = "ccndp" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -15,6 +24,11 @@ matplotlib = "^3.4"
 pydoe2 = "^1.3"
 
 [tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+solve = "ccndp.solve:main"
+make_experiments = "ccndp.make_experiments:main"
+plot = "ccndp.plot:main"
 
 [tool.black]
 line-length = 79

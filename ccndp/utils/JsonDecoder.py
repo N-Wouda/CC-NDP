@@ -4,10 +4,10 @@ from typing import Any, Dict
 import numpy as np
 
 # TODO figure out why this does not work without explicit imports
-from src.classes.Edge import Edge
-from src.classes.Node import Node
-from src.classes.SinkNode import SinkNode
-from src.classes.SourceNode import SourceNode
+from ccndp.classes.Edge import Edge
+from ccndp.classes.Node import Node
+from ccndp.classes.SinkNode import SinkNode
+from ccndp.classes.SourceNode import SourceNode
 
 
 class JsonDecoder(json.JSONDecoder):
@@ -35,14 +35,15 @@ def val2node(val: dict) -> Node:
 
     x, y = val.pop("loc")
     loc = (float(x), float(y))
+    node_type = val.pop("node_type")
 
     if "supply" in val:
-        return SourceNode(idx, loc, **val)
+        return SourceNode(idx, loc, node_type, **val)
 
     if "demand" in val:
-        return SinkNode(idx, loc, **val)
+        return SinkNode(idx, loc, node_type, **val)
 
-    return Node(idx, loc)
+    return Node(idx, loc, node_type)
 
 
 def val2edge(val: dict) -> Edge:

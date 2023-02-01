@@ -7,7 +7,7 @@ import numpy as np
 from gurobipy import GRB, Constr, Model, Var
 from scipy.sparse import csr_matrix
 
-from src.config import DEFAULT_SUB_PARAMS
+from ccndp.config import DEFAULT_SUB_PARAMS
 
 from .Cut import Cut
 

@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 
-from src.classes import ProblemData, Result
+from ccndp.classes import ProblemData, Result
 
 
 def parse_args():

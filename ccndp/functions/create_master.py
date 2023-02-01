@@ -1,7 +1,7 @@
 import numpy as np
 from gurobipy import MVar, Model
 
-from src.classes import MasterProblem, ProblemData
+from ccndp.classes import MasterProblem, ProblemData
 
 
 def create_master(

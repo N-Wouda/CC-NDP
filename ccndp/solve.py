@@ -15,12 +15,12 @@ with open("logging.yaml", "r") as file:
     log_settings = yaml.safe_load(file.read())
     logging.config.dictConfig(log_settings)
 
-from src.classes import FORMULATIONS, ProblemData, Result, RootResult
-from src.functions import create_master, create_subproblems
+from ccndp.classes import FORMULATIONS, ProblemData, Result, RootResult
+from ccndp.functions import create_master, create_subproblems
 
 
 def parse_args():
-    parser = ArgumentParser(prog="run")
+    parser = ArgumentParser(prog="solve")
 
     # General arguments for the entire program.
     parser.add_argument("data_loc", help="File system data location.")

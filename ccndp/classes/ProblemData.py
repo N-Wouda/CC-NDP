@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.utils import JsonStorableMixin
+from ccndp.utils import JsonStorableMixin
 
 from .Edge import Edge
 from .Node import Node

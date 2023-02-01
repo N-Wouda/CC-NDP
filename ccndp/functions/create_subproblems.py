@@ -4,7 +4,7 @@ import numpy as np
 from gurobipy import Model
 from scipy.sparse import csr_matrix
 
-from src.classes import ProblemData, SinkNode, SourceNode, SubProblem
+from ccndp.classes import ProblemData, SinkNode, SourceNode, SubProblem
 
 
 def create_subproblems(
@@ -65,7 +65,6 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
 
     # Balance constraints
     for node in data.nodes:
-        # TODO eta? node type?
         f_in = f[data.edge_indices_to(node)]
         f_out = f[data.edge_indices_from(node)]
 
@@ -83,8 +82,16 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
         edge_node = f[data.edge_index_of((node, node))]
 
         # Two constraints, one for the flow into the node, and one for the
-        # flow out of it.
-        m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
+        # flow out of it. For SUM nodes, this is sum(in) == sum(out). For MIN
+        # nodes, we have in == sum(out) for each incoming edge in.
+        # TODO eta?
+        if node.node_type == "SUM":
+            m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
+        else:
+            for num_edge, f_edge_in in enumerate(f_in):
+                name = f"balance({node}, in, min-{num_edge})"
+                m.addConstr(edge_node == f_edge_in, name=name)
+
         m.addConstr(sum(f_out) == edge_node, name=f"balance({node}, out)")
 
     # Demand constraint at the "artificial sink" t.

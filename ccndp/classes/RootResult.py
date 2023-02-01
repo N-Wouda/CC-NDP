@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from src.utils import JsonStorableMixin
+from ccndp.utils import JsonStorableMixin
 
 
 @dataclass

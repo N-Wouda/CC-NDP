@@ -6,7 +6,7 @@ import numpy as np
 from gurobipy import GRB, LinExpr, Model
 from scipy.sparse import csr_matrix
 
-from src.config import DEFAULT_MASTER_PARAMS
+from ccndp.config import DEFAULT_MASTER_PARAMS
 
 from .Cut import Cut
 from .Result import Result
