@@ -21,20 +21,20 @@ class BB(SubProblem):
     """
 
     def _set_vars(self) -> list[Var]:
-        nrow, ncol = self._W.shape
-        f = self._model.addMVar((ncol,), name="f").tolist()
-        s = self._model.addMVar((nrow,), obj=1, name="s").tolist()
+        nrow, ncol = self.W.shape
+        f = self.model.addMVar((ncol,), name="f").tolist()
+        s = self.model.addMVar((nrow,), obj=1, name="s").tolist()
 
         return f + s
 
     def _set_constrs(self) -> list[Constr]:
         sense2sign = {">": 1, "<": -1, "=": 0}
-        identity = eye(self._W.shape[0])
-        identity.setdiag([sense2sign[sense] for sense in self._senses])
+        identity = eye(self.W.shape[0])
+        identity.setdiag([sense2sign[sense] for sense in self.senses])
 
-        return self._model.addMConstrs(
-            hstack([self._W, identity]),
+        return self.model.addMConstrs(
+            hstack([self.W, identity]),
             None,
-            self._senses,
-            self._h,
+            self.senses,
+            self.h,
         )

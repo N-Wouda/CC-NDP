@@ -12,9 +12,9 @@ class FlowMIS(SNC):
     """
 
     def _set_constrs(self) -> list[Constr]:
-        demands = np.array([name.startswith("demand") for name in self._cname])
+        demands = np.array([name.startswith("demand") for name in self.cname])
         demands = demands[..., np.newaxis]
 
-        return self._model.addMConstrs(
-            hstack([self._W, demands]), None, self._senses, self._h
+        return self.model.addMConstrs(
+            hstack([self.W, demands]), None, self.senses, self.h
         )

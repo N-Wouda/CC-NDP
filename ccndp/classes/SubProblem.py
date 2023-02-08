@@ -32,30 +32,31 @@ class SubProblem(ABC):
     ):
         logger.info(f"Creating {self.__class__.__name__} #{scen}.")
 
-        self._T = T
-        self._W = W
-        self._h = np.array(h).reshape((len(h), 1))
-        self._senses = np.array(senses)
-        self._vname = vname
-        self._cname = cname
-        self._scen = scen
+        self.scenario = scen
 
-        self._model = Model(f"Sub #{self._scen}")
+        self.T = T
+        self.W = W
+        self.h = np.array(h).reshape((len(h), 1))
+        self.senses = np.array(senses)
+        self.vname = vname
+        self.cname = cname
+
+        self.model = Model(f"Sub #{self.scenario}")
 
         for param, value in (DEFAULT_SUB_PARAMS | params).items():
             logger.debug(f"Setting {param} = {value}.")
-            self._model.setParam(param, value)
+            self.model.setParam(param, value)
 
         self._vars = self._set_vars()
         self._constrs = self._set_constrs()
 
-        for var, name in zip(self._vars, self._vname):
+        for var, name in zip(self._vars, self.vname):
             var.varName = name
 
-        for constr, name in zip(self._constrs, self._cname):
+        for constr, name in zip(self._constrs, self.cname):
             constr.constrName = name
 
-        self._model.update()
+        self.model.update()
 
     @abstractmethod
     def _set_vars(self) -> list[Var]:
@@ -68,23 +69,23 @@ class SubProblem(ABC):
     def cut(self) -> Cut:
         duals = np.array([constr.pi for constr in self._constrs])
 
-        beta = duals.transpose() @ self._T
-        gamma = float(duals @ self._h)
+        beta = duals.transpose() @ self.T
+        gamma = float(duals @ self.h)
 
-        return Cut(beta, gamma, self._scen)
+        return Cut(beta, gamma, self.scenario)
 
     def is_feasible(self) -> bool:
         return np.isclose(self.objective(), 0.0)  # type: ignore
 
     def objective(self) -> float:
-        assert self._model.status == GRB.OPTIMAL
-        return self._model.objVal
+        assert self.model.status == GRB.OPTIMAL
+        return self.model.objVal
 
     def solve(self):
-        self._model.optimize()
+        self.model.optimize()
 
     def update_rhs(self, x: np.ndarray):
-        rhs = self._h - self._T @ x[..., np.newaxis]
+        rhs = self.h - self.T @ x[..., np.newaxis]
         rhs[rhs < 0] = 0  # is only ever negative due to rounding errors
 
-        self._model.setAttr("RHS", self._constrs, rhs)  # type: ignore
+        self.model.setAttr("RHS", self._constrs, rhs)  # type: ignore

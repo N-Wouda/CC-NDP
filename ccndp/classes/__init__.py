@@ -1,4 +1,7 @@
+from typing import Dict, Type
+
 from .BB import BB
+from .DeterministicEquivalent import DeterministicEquivalent
 from .Edge import Edge
 from .FlowMIS import FlowMIS
 from .MIS import MIS
@@ -12,7 +15,7 @@ from .SinkNode import SinkNode
 from .SourceNode import SourceNode
 from .SubProblem import SubProblem
 
-FORMULATIONS = {
+FORMULATIONS: Dict[str, Type[SubProblem]] = {
     "BB": BB,
     "FlowMIS": FlowMIS,
     "MIS": MIS,

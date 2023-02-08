@@ -48,18 +48,18 @@ class MasterProblem:
     ):
         logger.info("Creating master problem.")
 
-        self._model = Model("master")
+        self.model = Model("master")
 
         for param, value in (DEFAULT_MASTER_PARAMS | params).items():
             logger.debug(f"Setting {param} = {value}.")
-            self._model.setParam(param, value)
+            self.model.setParam(param, value)
 
-        dec_vars = self._model.addMVar((len(c),), lb, ub, c, vtype).tolist()
+        dec_vars = self.model.addMVar((len(c),), lb, ub, c, vtype).tolist()
 
         self._x = dec_vars[:-num_scenarios]
         self._z = dec_vars[-num_scenarios:]
 
-        constrs = self._model.addMConstrs(A=A, x=None, sense=sense, b=b)
+        constrs = self.model.addMConstrs(A=A, x=None, sense=sense, b=b)
 
         for var, name in zip(dec_vars, vname):
             var.varName = name
@@ -67,7 +67,7 @@ class MasterProblem:
         for constr, name in zip(constrs, cname):
             constr.constrName = name
 
-        self._model.update()
+        self.model.update()
 
     @property
     def c(self) -> np.array:
@@ -80,8 +80,8 @@ class MasterProblem:
         return [var.varName for var in self._x]
 
     def objective(self) -> float:
-        assert self._model.status == GRB.OPTIMAL
-        return self._model.objVal
+        assert self.model.status == GRB.OPTIMAL
+        return self.model.objVal
 
     def add_lazy_cut(self, cut: Cut):
         """
@@ -93,7 +93,7 @@ class MasterProblem:
         lhs.addTerms(cut.gamma, self._z[cut.scen])  # type: ignore
         lhs.addTerms(cut.beta, self._x)  # type: ignore
 
-        self._model.cbLazy(lhs >= cut.gamma)
+        self.model.cbLazy(lhs >= cut.gamma)
 
     def compute_root_relaxation(self) -> RootResult:
         """
@@ -102,24 +102,24 @@ class MasterProblem:
         """
         logger.info("Computing LP root relaxation.")
 
-        self._model.reset()
-        relax = self._model.relax()
+        self.model.reset()
+        relax = self.model.relax()
         relax.optimize()
 
         assert relax.status == GRB.OPTIMAL
 
         logger.info("Computing MIP root relaxation.")
 
-        self._model.reset()
-        self._model.optimize()
+        self.model.reset()
+        self.model.optimize()
 
-        assert self._model.status == GRB.OPTIMAL
+        assert self.model.status == GRB.OPTIMAL
 
         return RootResult(
             relax.runTime,
             relax.objVal,
-            self._model.runTime,
-            self._model.objVal,
+            self.model.runTime,
+            self.model.objVal,
         )
 
     def solve_decomposition(self, subproblems: list[SubProblem]) -> Result:
@@ -177,7 +177,7 @@ class MasterProblem:
                     # ensuring we do not find that one again.
                     self.add_lazy_cut(sub.cut())
 
-        self._model.optimize(callback)  # type: ignore
+        self.model.optimize(callback)  # type: ignore
 
         return Result(
             dict(zip(self.decision_names(), self.decisions())),

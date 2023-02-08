@@ -19,17 +19,17 @@ class SNC(SubProblem):
     """
 
     def _set_vars(self) -> list[Var]:
-        nrow, ncol = self._W.shape
-        f = self._model.addMVar((ncol,)).tolist()
-        s = [self._model.addVar(obj=1, name="s")]
+        nrow, ncol = self.W.shape
+        f = self.model.addMVar((ncol,)).tolist()
+        s = [self.model.addVar(obj=1, name="s")]
 
         return f + s
 
     def _set_constrs(self) -> list[Constr]:
         sense2sign = {">": 1, "<": -1, "=": 0}
-        one = np.array([sense2sign[sense] for sense in self._senses])
+        one = np.array([sense2sign[sense] for sense in self.senses])
         one.shape = (len(one), 1)
 
-        return self._model.addMConstrs(
-            hstack([self._W, one]), None, self._senses, self._h
+        return self.model.addMConstrs(
+            hstack([self.W, one]), None, self.senses, self.h
         )
