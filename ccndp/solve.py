@@ -83,9 +83,7 @@ def main():
     data = ProblemData.from_file(args.data_loc)
     master = create_master(data, args.alpha, args.no_vis)
 
-    res = args.func(data, master, args)
-
-    if res:
+    if res := args.func(data, master, args):
         res.to_file(args.res_loc)
         print(res)
 

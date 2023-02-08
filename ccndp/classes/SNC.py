@@ -19,7 +19,7 @@ class SNC(SubProblem):
     """
 
     def _set_vars(self) -> list[Var]:
-        nrow, ncol = self.W.shape
+        _, ncol = self.W.shape
         f = self.model.addMVar((ncol,)).tolist()
         s = [self.model.addVar(obj=1, name="s")]
 
