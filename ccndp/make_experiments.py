@@ -32,11 +32,19 @@ def make_and_write_experiment(
     locs = np.around(np.random.uniform(0, 10, (3 * num_nodes, 2)), 2)
 
     # Node sets: sources, facilities, and sinks
-    indices = range(num_nodes)
+    indices = np.arange(num_nodes, dtype=int)
     types = ["SUM"] * num_nodes
+
     sources = list(map(SourceNode, indices, locs, types, supply))
-    facilities = list(map(Node, indices, locs[num_nodes:], types))
-    sinks = list(map(SinkNode, indices, locs[2 * num_nodes :], types, demand))
+
+    fac_indices = num_nodes + indices
+    fac_locs = locs[num_nodes:]
+    facilities = list(map(Node, fac_indices, fac_locs, types))
+
+    sink_indices = 2 * num_nodes + indices
+    sink_locs = locs[2 * num_nodes :]
+    sinks = list(map(SinkNode, sink_indices, sink_locs, types, demand))
+
     nodes = sources + facilities + sinks
 
     layers = np.array_split(facilities, num_layers)

@@ -5,7 +5,7 @@ import numpy as np
 from .Node import Node
 
 
-@dataclass
+@dataclass(frozen=True)
 class SinkNode(Node):
     """
     Represents a sink node in the model graph.

@@ -13,8 +13,10 @@ class JsonEncoder(json.JSONEncoder):
         if isinstance(obj, np.generic):
             return obj.item()
 
-        if isinstance(obj, Edge):
-            obj.frm = obj.frm.idx
-            obj.to = obj.to.idx
+        data = vars(obj)
 
-        return vars(obj)
+        if isinstance(obj, Edge):
+            data["frm"] = obj.frm.idx
+            data["to"] = obj.to.idx
+
+        return data

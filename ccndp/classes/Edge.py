@@ -5,7 +5,7 @@ import numpy as np
 from .Node import Node
 
 
-@dataclass
+@dataclass(frozen=True)
 class Edge:
     """
     Represents an edge in the model graph.

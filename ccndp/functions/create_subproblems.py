@@ -71,7 +71,8 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
         if isinstance(node, SinkNode):
             # For sinks there's only the balance constraint at the sink node,
             # there's no additional construction at the node itself.
-            m.addConstr(f_sink[node.idx] == sum(f_in), name=f"balance({node})")
+            idx = node.idx - min(sink.idx for sink in sinks)
+            m.addConstr(f_sink[idx] == sum(f_in), name=f"balance({node})")
             continue
 
         if isinstance(node, SourceNode):
