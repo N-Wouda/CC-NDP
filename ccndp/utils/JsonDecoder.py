@@ -1,4 +1,5 @@
 import json
+from functools import partial
 from typing import Any, Dict
 
 import numpy as np
@@ -18,14 +19,16 @@ class JsonDecoder(json.JSONDecoder):
 
 def object_hook(obj: Dict[str, Any]) -> Dict[str, Any]:
     for k, v in obj.items():
-        if k == "nodes":
-            v = list(map(val2node, v))
-
-        if k == "edges":
-            v = list(map(val2edge, v))
-
         if isinstance(v, list):
             obj[k] = np.array(v)
+
+    if "nodes" in obj:
+        obj["nodes"] = list(map(val2node, obj["nodes"]))
+
+    if "edges" in obj:
+        assert "nodes" in obj
+        func = partial(val2edge, nodes=obj["nodes"])
+        obj["edges"] = list(map(func, obj["edges"]))
 
     return obj
 
@@ -46,8 +49,8 @@ def val2node(val: dict) -> Node:
     return Node(idx, loc, node_type)
 
 
-def val2edge(val: dict) -> Edge:
-    frm = val2node(val.pop("frm"))
-    to = val2node(val.pop("to"))
+def val2edge(val: dict, nodes) -> Edge:
+    frm = val.pop("frm")
+    to = val.pop("to")
 
-    return Edge(frm, to, **val)
+    return Edge(nodes[frm], nodes[to], **val)

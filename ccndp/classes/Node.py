@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass
 class Node:
     """
     Represents a node in the model graph.
@@ -22,7 +22,7 @@ class Node:
     #  - eta?
 
     def __eq__(self, other):
-        return isinstance(other, Node) and str(other) == str(self)
+        return isinstance(other, Node) and self.idx == other.idx
 
     def __str__(self) -> str:
         return f"facility[{self.idx}]"
