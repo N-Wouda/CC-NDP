@@ -56,7 +56,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
 
     # Capacity constraints for "x decisions" from the first stage.
     for x_i, f_i, edge in zip(x, f, data.edges):
-        m.addConstr(f_i <= edge.capacity[scen] * x_i, name=f"capacity{edge}")
+        m.addConstr(f_i <= edge.capacity[scen] * x_i, name=f"capacity({edge})")
 
     # Capacity constraints (from each sink node to the "artificial sink" t).
     demand = np.array([sink.demand[scen] for sink in sinks])

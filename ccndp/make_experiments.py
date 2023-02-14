@@ -3,9 +3,11 @@ Makes the random instances used in the numerical experiments section of the
 paper. See there for details.
 """
 
+import argparse
 import csv
 from concurrent.futures import ThreadPoolExecutor
 from itertools import product
+from pathlib import Path
 
 import numpy as np
 from pyDOE2 import fullfact
@@ -15,17 +17,29 @@ from ccndp.classes import Edge, Node, ProblemData, SinkNode, SourceNode
 from ccndp.functions import pairwise
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(prog="make_experiments")
+
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--experiment_dir",
+        help="Location to write experiments. Will be created if not exists.",
+        default="data/instances/",
+        type=Path,
+    )
+
+    return parser.parse_args()
+
+
 def parameter_levels() -> dict[str, list]:
-    num_nodes = [12, 24, 36]
-    num_layers = [1, 2, 3]
-    num_scen = [25, 50, 100, 200]
+    return dict(
+        num_nodes=[12, 24, 36],
+        num_layers=[1, 2, 3],
+        num_scen=[25, 50, 100, 200],
+    )
 
-    return locals()
 
-
-def make_and_write_experiment(
-    index: int, num_scen: int, num_nodes: int, num_layers: int
-):
+def make_experiment(where, num_scen, num_nodes, num_layers, **kwargs):
     # Node data: supply (SourceNode), demand (SinkNode), and the node locations
     supply = np.around(np.random.uniform(50, 100, (num_nodes, num_scen)), 2)
     demand = np.around(np.random.uniform(0, 50, (num_nodes, num_scen)), 2)
@@ -71,11 +85,14 @@ def make_and_write_experiment(
             edges.append(Edge(frm, to, cost, capacity, "C"))
 
     data = ProblemData(nodes=nodes, edges=edges, num_scenarios=num_scen)
-    data.to_file(f"data/instances/{index}.json")
+    data.to_file(where)
 
 
 def main():
-    np.random.seed(42)
+    args = parse_args()
+
+    np.random.seed(args.seed)
+    args.experiment_dir.mkdir(exist_ok=True)
 
     levels = parameter_levels()
     num_levels = [len(level) for level in levels.values()]
@@ -89,10 +106,11 @@ def main():
             for (k, v), idx in zip(levels.items(), design):
                 exp[k] = v[int(idx)]
 
-            executor.submit(make_and_write_experiment, **exp)
+            where = args.experiment_dir / f"{num}.json"
+            executor.submit(make_experiment, where, **exp)
             experiments.append(exp)
 
-    with open("data/instances/instances.csv", "w", newline="") as fh:
+    with open(args.experiment_dir / "instances.csv", "w", newline="") as fh:
         writer = csv.DictWriter(fh, ["index"] + list(levels.keys()))
         writer.writeheader()
         writer.writerows(experiments)
