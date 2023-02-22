@@ -86,14 +86,13 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
         # flow out of it. For SUM nodes, this is sum(in) == sum(out). For MIN
         # nodes, we have in == sum(out) for each incoming edge in.
         # TODO eta?
-        if node.node_type == "SUM":
-            m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
-        else:
-            for num_edge, f_edge_in in enumerate(f_in):
-                name = f"balance({node}, in, min-{num_edge})"
-                m.addConstr(edge_node == f_edge_in, name=name)
-
+        m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
         m.addConstr(sum(f_out) == edge_node, name=f"balance({node}, out)")
+
+        # MIN case:
+        # for num_edge, f_edge_in in enumerate(f_in):
+        #     name = f"balance({node}, in, min-{num_edge})"
+        #     m.addConstr(edge_node == f_edge_in, name=name)
 
     # Demand constraint at the "artificial sink" t.
     m.addConstr(f_sink.sum() >= demand.sum(), name="demand(t)")

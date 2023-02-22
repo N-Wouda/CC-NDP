@@ -13,7 +13,11 @@ import numpy as np
 from pyDOE2 import fullfact
 from scipy.spatial import distance
 
-from ccndp.classes import Edge, Node, ProblemData, SinkNode, SourceNode
+from ccndp.classes import Edge
+from ccndp.classes import FacilityNode as Facility
+from ccndp.classes import ProblemData, Resource
+from ccndp.classes import SinkNode as Sink
+from ccndp.classes import SourceNode as Source
 from ccndp.functions import pairwise
 
 
@@ -40,25 +44,29 @@ def parameter_levels() -> dict[str, list]:
     )
 
 
-def make_experiment(where, num_scen, num_nodes, num_layers, **kwargs):
+def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
+    resources = [Resource(idx, f"Res #{idx}") for idx in range(num_res)]
+
     # Node data: supply (SourceNode), demand (SinkNode), and the node locations
     supply = np.around(np.random.uniform(50, 100, (num_nodes, num_scen)), 2)
     demand = np.around(np.random.uniform(0, 50, (num_nodes, num_scen)), 2)
     locs = np.around(np.random.uniform(0, 10, (3 * num_nodes, 2)), 2)
 
-    # Node sets: sources, facilities, and sinks
-    indices = np.arange(num_nodes, dtype=int)
-    types = ["SUM"] * num_nodes
+    # Node sets: sources, facilities, and sinks, and what they make and need.
+    src_idcs = np.arange(num_nodes, dtype=int)
+    src_makes = []
+    sources = list(map(Source, src_idcs, locs, src_makes, supply))
 
-    sources = list(map(SourceNode, indices, locs, types, supply))
-
-    fac_indices = num_nodes + indices
+    fac_idcs = num_nodes + src_idcs
     fac_locs = locs[num_nodes:]
-    facilities = list(map(Node, fac_indices, fac_locs, types))
+    fac_makes = []
+    fac_needs = []
+    facilities = list(map(Facility, fac_idcs, fac_locs, fac_makes, fac_needs))
 
-    sink_indices = 2 * num_nodes + indices
+    sink_idcs = 2 * num_nodes + src_idcs
     sink_locs = locs[2 * num_nodes :]
-    sinks = list(map(SinkNode, sink_indices, sink_locs, types, demand))
+    sink_needs = []
+    sinks = list(map(Sink, sink_idcs, sink_locs, sink_needs, demand))
 
     nodes = sources + facilities + sinks
 
@@ -85,7 +93,10 @@ def make_experiment(where, num_scen, num_nodes, num_layers, **kwargs):
             cost = distance.euclidean(frm.loc, to.loc)
             edges.append(Edge(frm, to, cost, capacity, "C"))
 
-    data = ProblemData(nodes=nodes, edges=edges, num_scenarios=num_scen)
+    data = ProblemData(
+        resources=resources, nodes=nodes, edges=edges, num_scenarios=num_scen
+    )
+
     data.to_file(where)
 
 

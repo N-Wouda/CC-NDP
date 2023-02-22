@@ -9,6 +9,7 @@ from ccndp.utils import JsonStorableMixin
 
 from .Edge import Edge
 from .Node import Node
+from .Resource import Resource
 from .Result import Result
 from .SinkNode import SinkNode
 from .SourceNode import SourceNode
@@ -25,12 +26,15 @@ class ProblemData(JsonStorableMixin):
         Array of nodes.
     edges
         Array of edges.
+    resources
+        Array of resources. These are consumed and created by facilities.
     num_scenarios
         Number of scenarios.
     """
 
     nodes: list[Node]
     edges: list[Edge]
+    resources: list[Resource]
     num_scenarios: int
 
     def __hash__(self) -> int:
@@ -38,7 +42,14 @@ class ProblemData(JsonStorableMixin):
         Returns a hash based on the size properties of the data instance:
         number of nodes, number of edges, and the number of scenarios.
         """
-        return hash((len(self.nodes), len(self.edges), self.num_scenarios))
+        return hash(
+            (
+                len(self.nodes),
+                len(self.edges),
+                len(self.resources),
+                self.num_scenarios,
+            )
+        )
 
     @property
     def num_nodes(self) -> int:
@@ -47,6 +58,10 @@ class ProblemData(JsonStorableMixin):
     @property
     def num_edges(self) -> int:
         return len(self.edges)
+
+    @property
+    def num_resources(self) -> int:
+        return len(self.resources)
 
     def costs(self) -> np.ndarray:
         return np.array([edge.cost for edge in self.edges])
