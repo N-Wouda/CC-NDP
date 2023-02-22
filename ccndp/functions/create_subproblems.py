@@ -87,12 +87,8 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
             # The inflow is the arc from the "artificial source" s.
             f_in = [f_source[node.idx]]
 
-        # Balance constraints. The graph around this node looks like
-        #
-        #   nodes - (f_in) -> . - (edge_node) -> . - (f_out) -> nodes
-        #
-        # The capacitiy built at the node is given by the edge_node edge,
-        # which is passed through in the above graph.
+        # Balance constraints. The graph around this node looks like:
+        #   nodes --(f_in)--> [edge_node] --(f_out)-> nodes
         edge_node = f[data.edge_index_of((node, node))]
 
         if isinstance(node, Facility):

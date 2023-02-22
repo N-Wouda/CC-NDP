@@ -44,7 +44,7 @@ def make_experiment_settings():
     )
 
     num_levels = [len(level) for level in levels.values()]
-    exp_number = count(0)
+    exp_number = count(1)
 
     experiments = []
 
