@@ -36,6 +36,7 @@ def parameter_levels() -> dict[str, list]:
         num_nodes=[12, 24, 36],
         num_layers=[1, 2, 3],
         num_scen=[25, 50, 100, 200],
+        num_res=[1, 2],
     )
 
 
