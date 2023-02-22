@@ -7,6 +7,7 @@ import numpy as np
 # TODO figure out why this does not work without explicit imports
 from ccndp.classes.Edge import Edge
 from ccndp.classes.Node import Node
+from ccndp.classes.Resource import Resource
 from ccndp.classes.SinkNode import SinkNode
 from ccndp.classes.SourceNode import SourceNode
 
@@ -38,15 +39,16 @@ def val2node(val: dict) -> Node:
 
     x, y = val.pop("loc")
     loc = (float(x), float(y))
-    node_type = val.pop("node_type")
+    needs = tuple(Resource(**res) for res in val.pop("needs"))
+    makes = tuple(Resource(**res) for res in val.pop("makes"))
 
     if "supply" in val:
-        return SourceNode(idx, loc, node_type, **val)
+        return SourceNode(idx, loc, makes, needs, val["supply"])
 
     if "demand" in val:
-        return SinkNode(idx, loc, node_type, **val)
+        return SinkNode(idx, loc, makes, needs, val["demand"])
 
-    return Node(idx, loc, node_type)
+    return Node(idx, loc, makes, needs)
 
 
 def val2edge(val: dict, nodes) -> Edge:
