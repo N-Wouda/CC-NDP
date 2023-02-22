@@ -1,10 +1,15 @@
+from collections import defaultdict
 from typing import Type
 
 import numpy as np
 from gurobipy import Model
 from scipy.sparse import csr_matrix
 
-from ccndp.classes import ProblemData, SinkNode, SourceNode, SubProblem
+from ccndp.classes import FacilityNode as Facility
+from ccndp.classes import ProblemData
+from ccndp.classes import SinkNode as Sink
+from ccndp.classes import SourceNode as Source
+from ccndp.classes import SubProblem
 
 
 def create_subproblems(
@@ -65,33 +70,46 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
 
     # Balance constraints
     for node in data.nodes:
-        f_in = f[data.edge_indices_to(node)]
-        f_out = f[data.edge_indices_from(node)]
+        idcs_in = data.edge_indices_to(node)
+        idcs_out = data.edge_indices_from(node)
 
-        if isinstance(node, SinkNode):
+        f_in = f[idcs_in]
+        f_out = f[idcs_out]
+
+        if isinstance(node, Sink):
             # For sinks there's only the balance constraint at the sink node,
             # there's no additional construction at the node itself.
             idx = node.idx - min(sink.idx for sink in sinks)
             m.addConstr(f_sink[idx] == sum(f_in), name=f"balance({node})")
             continue
 
-        if isinstance(node, SourceNode):
+        if isinstance(node, Source):
             # The inflow is the arc from the "artificial source" s.
             f_in = [f_source[node.idx]]
 
-        # This edge is flow through the node itself.
+        # Balance constraints. The graph around this node looks like:
+        #   nodes --(f_in)--> [edge_node] --(f_out)-> nodes
         edge_node = f[data.edge_index_of((node, node))]
 
-        # Two constraints, one for the flow into the node, and one for the
-        # flow out of it. For SUM nodes, this is sum(in) == sum(out). For MIN
-        # nodes, we have in == sum(out) for each incoming edge in.
-        # TODO eta?
-        if node.node_type == "SUM":
-            m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
+        if isinstance(node, Facility):
+            # Facilities can only produce the minimum of all input resource
+            # flows. This reduces to a regular flow balance constraint in case
+            # there is only a single resource.
+            edges_in = [data.edges[idx] for idx in idcs_in]
+            by_res = defaultdict(list)
+
+            for edge, flow in zip(edges_in, f_in):
+                assert isinstance(edge.frm, (Source, Facility))
+                by_res[edge.frm.makes].append(flow)
+
+            for res, flows in by_res.items():
+                m.addConstr(
+                    edge_node == sum(flows),  # TODO eta
+                    name=f"balance({node}, in, {res})",
+                )
         else:
-            for num_edge, f_edge_in in enumerate(f_in):
-                name = f"balance({node}, in, min-{num_edge})"
-                m.addConstr(edge_node == f_edge_in, name=name)
+            # Regular in == out balance constraint for all non-facility nodes.
+            m.addConstr(edge_node == sum(f_in), name=f"balance({node}, in)")
 
         m.addConstr(sum(f_out) == edge_node, name=f"balance({node}, out)")
 

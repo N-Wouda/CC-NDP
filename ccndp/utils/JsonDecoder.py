@@ -6,7 +6,9 @@ import numpy as np
 
 # TODO figure out why this does not work without explicit imports
 from ccndp.classes.Edge import Edge
+from ccndp.classes.FacilityNode import FacilityNode
 from ccndp.classes.Node import Node
+from ccndp.classes.Resource import Resource
 from ccndp.classes.SinkNode import SinkNode
 from ccndp.classes.SourceNode import SourceNode
 
@@ -22,35 +24,49 @@ def object_hook(obj: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(v, list):
             obj[k] = np.array(v)
 
+    if "resources" in obj:
+        obj["resources"] = list(map(val2res, obj["resources"]))
+
     if "nodes" in obj:
-        obj["nodes"] = list(map(val2node, obj["nodes"]))
+        assert "resources" in obj
+        func = partial(val2node, resources=obj["resources"])
+        obj["nodes"] = list(map(func, obj["nodes"]))
 
     if "edges" in obj:
         assert "nodes" in obj
-        func = partial(val2edge, nodes=obj["nodes"])
+        func = partial(val2edge, nodes=obj["nodes"])  # type: ignore
         obj["edges"] = list(map(func, obj["edges"]))
 
     return obj
 
 
-def val2node(val: dict) -> Node:
+def val2node(val: dict, resources) -> Node:
     idx = int(val.pop("idx"))
 
     x, y = val.pop("loc")
     loc = (float(x), float(y))
-    node_type = val.pop("node_type")
 
     if "supply" in val:
-        return SourceNode(idx, loc, node_type, **val)
+        makes = resources[val["makes"]]
+        return SourceNode(idx, loc, makes, val["supply"])
 
     if "demand" in val:
-        return SinkNode(idx, loc, node_type, **val)
+        needs = resources[val["needs"]]
+        return SinkNode(idx, loc, needs, val["demand"])
 
-    return Node(idx, loc, node_type)
+    if "needs" in val and "makes" in val:
+        needs = tuple(resources[idx] for idx in val["needs"])
+        makes = resources[val["makes"]]
+        return FacilityNode(idx, loc, makes, needs)
+
+    return Node(idx, loc)
 
 
 def val2edge(val: dict, nodes) -> Edge:
-    frm = val.pop("frm")
-    to = val.pop("to")
+    frm = nodes[val.pop("frm")]
+    to = nodes[val.pop("to")]
+    return Edge(frm, to, **val)
 
-    return Edge(nodes[frm], nodes[to], **val)
+
+def val2res(val: dict) -> Resource:
+    return Resource(**val)

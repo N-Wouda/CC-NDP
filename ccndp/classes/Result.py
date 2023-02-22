@@ -103,7 +103,7 @@ class Result(JsonStorableMixin):
 
         decisions = [
             "Decisions",
-            "=========",
+            "---------",
             "(only non-zero decisions)\n",
         ]
 

@@ -6,14 +6,18 @@ paper. See there for details.
 import argparse
 import csv
 from concurrent.futures import ThreadPoolExecutor
-from itertools import product
+from itertools import count, cycle, product
 from pathlib import Path
 
 import numpy as np
 from pyDOE2 import fullfact
 from scipy.spatial import distance
 
-from ccndp.classes import Edge, Node, ProblemData, SinkNode, SourceNode
+from ccndp.classes import Edge
+from ccndp.classes import FacilityNode as Facility
+from ccndp.classes import ProblemData, Resource
+from ccndp.classes import SinkNode as Sink
+from ccndp.classes import SourceNode as Source
 from ccndp.functions import pairwise
 
 
@@ -31,33 +35,89 @@ def parse_args():
     return parser.parse_args()
 
 
-def parameter_levels() -> dict[str, list]:
-    return dict(
+def make_experiment_settings():
+    levels = dict(
         num_nodes=[12, 24, 36],
-        num_layers=[1, 2, 3],
+        num_layers=[1, 2],
         num_scen=[25, 50, 100, 200],
+        num_res=[0, 1, 2],
     )
 
+    num_levels = [len(level) for level in levels.values()]
+    exp_number = count(1)
 
-def make_experiment(where, num_scen, num_nodes, num_layers, **kwargs):
+    experiments = []
+
+    for design in fullfact(num_levels):
+        exp = {}
+
+        for (k, v), idx in zip(levels.items(), design):
+            exp[k] = v[int(idx)]
+
+        # With just one layer, we have source -> facility -> sink, so there's
+        # no resources other than the source and sink resources.
+        if exp["num_res"] > 0 and exp["num_layers"] == 1:
+            continue
+
+        # With more than one layer, we have source -> facility1 -> facility2
+        # -> sink, so there is at least one resource needed between facility1
+        # and facility2 (and possibly more)
+        if exp["num_res"] == 0 and exp["num_layers"] == 2:
+            continue
+
+        exp["index"] = next(exp_number)
+        experiments.append(exp)
+
+    return experiments
+
+
+def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
+    resources = [
+        Resource(0, "Source resource"),
+        *[Resource(idx, f"Res #{idx}") for idx in range(1, num_res + 1)],
+        Resource(num_res + 1, "Sink resource"),
+    ]
+
     # Node data: supply (SourceNode), demand (SinkNode), and the node locations
     supply = np.around(np.random.uniform(50, 100, (num_nodes, num_scen)), 2)
     demand = np.around(np.random.uniform(0, 50, (num_nodes, num_scen)), 2)
     locs = np.around(np.random.uniform(0, 10, (3 * num_nodes, 2)), 2)
 
-    # Node sets: sources, facilities, and sinks
-    indices = np.arange(num_nodes, dtype=int)
-    types = ["SUM"] * num_nodes
+    # Node sets: sources, facilities, and sinks, and what they make and need.
+    src_idcs = np.arange(num_nodes, dtype=int)
+    src_makes = [resources[0] for _ in range(num_nodes)]
+    sources = list(map(Source, src_idcs, locs, src_makes, supply))
 
-    sources = list(map(SourceNode, indices, locs, types, supply))
-
-    fac_indices = num_nodes + indices
+    fac_idcs = num_nodes + src_idcs
     fac_locs = locs[num_nodes:]
-    facilities = list(map(Node, fac_indices, fac_locs, types))
 
-    sink_indices = 2 * num_nodes + indices
+    if num_layers == 1:
+        assert num_res == 0
+        fac_makes = [resources[-1] for _ in range(num_nodes)]
+        fac_needs = [(resources[0],) for _ in range(num_nodes)]
+    elif num_layers == 2:
+        assert num_res > 0
+        products = resources[1:-1]
+        products_cycle = cycle(products)
+
+        # First half of the facilities makes products (in the first layer)
+        # using the source resource.
+        fac_makes = [next(products_cycle) for _ in range(num_nodes // 2)]
+        fac_needs = [(resources[0],) for _ in range(num_nodes // 2)]
+
+        # The second half of the facilities (in the second layer) makes the
+        # sink resource using products created in the first layer.
+        fac_makes += [resources[-1] for _ in range(num_nodes // 2)]
+        fac_needs += [tuple(products) for _ in range(num_nodes // 2)]
+    else:
+        raise ValueError("num_layers is not in {1, 2}!")
+
+    facilities = list(map(Facility, fac_idcs, fac_locs, fac_makes, fac_needs))
+
+    sink_idcs = 2 * num_nodes + src_idcs
     sink_locs = locs[2 * num_nodes :]
-    sinks = list(map(SinkNode, sink_indices, sink_locs, types, demand))
+    sink_needs = [resources[-1] for _ in range(num_nodes)]
+    sinks = list(map(Sink, sink_idcs, sink_locs, sink_needs, demand))
 
     nodes = sources + facilities + sinks
 
@@ -84,34 +144,27 @@ def make_experiment(where, num_scen, num_nodes, num_layers, **kwargs):
             cost = distance.euclidean(frm.loc, to.loc)
             edges.append(Edge(frm, to, cost, capacity, "C"))
 
-    data = ProblemData(nodes=nodes, edges=edges, num_scenarios=num_scen)
+    data = ProblemData(
+        resources=resources, nodes=nodes, edges=edges, num_scenarios=num_scen
+    )
+
     data.to_file(where)
 
 
 def main():
     args = parse_args()
-
     np.random.seed(args.seed)
     args.experiment_dir.mkdir(exist_ok=True)
 
-    levels = parameter_levels()
-    num_levels = [len(level) for level in levels.values()]
-
-    experiments = []
+    experiments = make_experiment_settings()
 
     with ThreadPoolExecutor() as executor:
-        for num, design in enumerate(fullfact(num_levels), 1):
-            exp = dict(index=num)
-
-            for (k, v), idx in zip(levels.items(), design):
-                exp[k] = v[int(idx)]
-
+        for num, exp in enumerate(experiments, 1):
             where = args.experiment_dir / f"{num}.json"
             executor.submit(make_experiment, where, **exp)
-            experiments.append(exp)
 
     with open(args.experiment_dir / "instances.csv", "w", newline="") as fh:
-        writer = csv.DictWriter(fh, ["index"] + list(levels.keys()))
+        writer = csv.DictWriter(fh, list(experiments[0].keys()))
         writer.writeheader()
         writer.writerows(experiments)
 
