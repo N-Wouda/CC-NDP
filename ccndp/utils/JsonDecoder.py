@@ -63,7 +63,9 @@ def val2node(val: dict, resources) -> Node:
 
 
 def val2edge(val: dict, nodes) -> Edge:
-    return Edge(nodes[val["frm"]], nodes[val["to"]], **val)
+    frm = nodes[val.pop("frm")]
+    to = nodes[val.pop("to")]
+    return Edge(frm, to, **val)
 
 
 def val2res(val: dict) -> Resource:

@@ -102,7 +102,7 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
 
         # First half of the facilities makes products (in the first layer)
         # using the source resource.
-        fac_makes = [(next(products_cycle),) for _ in range(num_nodes // 2)]
+        fac_makes = [next(products_cycle) for _ in range(num_nodes // 2)]
         fac_needs = [(resources[0],) for _ in range(num_nodes // 2)]
 
         # The second half of the facilities (in the second layer) makes the
