@@ -163,7 +163,7 @@ class MasterProblem:
             run_times.append(model.cbGet(GRB.Callback.RUNTIME))
 
             x = np.array(model.cbGetSolution(self._x))
-            z = np.array(model.cbGetSolution(self._z), dtype=np.int)
+            z = np.array(model.cbGetSolution(self._z), dtype=int)
 
             for z_i, sub in zip(z, subproblems):
                 if z_i == 1:  # scenario is not selected, so is allowed to be
