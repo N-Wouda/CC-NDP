@@ -1,4 +1,5 @@
-import numpy as np
+import itertools
+
 from gurobipy import MVar, Model
 
 from ccndp.classes import MasterProblem, ProblemData
@@ -78,82 +79,25 @@ def add_constrs(
     if no_vis:  # do not add valid inequalities
         return
 
-    for src in data.sources():
-        src_edge_idx = data.edge_index_of((src, src))
+    from_sources = [data.edge_indices_from(src) for src in data.sources()]
+    from_sources = list(itertools.chain(*from_sources))  # type: ignore
 
-        for edge_idx in data.edge_indices_from(src):
-            # There is no point in having an edge with capacity when the source
-            # has not been built.
-            m.addConstr(
-                x[edge_idx] <= src.supply.max() * x[src_edge_idx],
-                name=f"{src} supply",
-            )
-
-    for fac in data.facilities():
-        fac_edge_idx = data.edge_index_of((fac, fac))
-        edge_indices_from_fac = data.edge_indices_from(fac)
-        edge_indices_to_fac = data.edge_indices_to(fac)
-
-        # Facility capacity should not exceed inflow along edges.
-        m.addConstr(
-            x[fac_edge_idx] <= x[edge_indices_to_fac].sum(),
-            name=f"{fac} agg inflow",
-        )
-
-        for edge_idx in edge_indices_to_fac:
-            # Similarly, an individual edge should not exceed the capacity of
-            # the facility target.
-            m.addConstr(x[edge_idx] <= x[fac_edge_idx], name=f"{fac} inflow")
-
-        # Facility capacity should not exceed outflow along edges.
-        m.addConstr(
-            x[fac_edge_idx] <= x[edge_indices_from_fac].sum(),
-            name=f"{fac} agg outflow",
-        )
-
-        for edge_idx in edge_indices_from_fac:
-            # Similarly, an edge need not be bigger than the attached facility.
-            m.addConstr(x[edge_idx] <= x[fac_edge_idx], name=f"{fac} outflow")
-
-    for sink in data.sinks():
-        edge_indices_to_sink = data.edge_indices_to(sink)
-        facilities = {data.edges[idx].frm for idx in edge_indices_to_sink}
-        fac_indices = [data.edge_index_of((fac, fac)) for fac in facilities]
-
-        for edge_idx in edge_indices_to_sink:
-            # There is no point in having individual edges capacities exceeding
-            # the demand they need to supply.
-            m.addConstr(
-                x[edge_idx] <= sink.demand.max(), name=f"{sink} demand"
-            )
-
-        for scen in range(data.num_scenarios):
-            # All edges into customers should together be sufficient to meet
-            # demand at the consumer in each feasible scenario.
-            d = sink.demand[scen]
-            m.addConstr(
-                x[edge_indices_to_sink].sum() >= (1 - z[scen]) * d,
-                name=f"{sink} edge capacity",
-            )
-
-            # Capacity of all facilities feeding into this consumer should be
-            # sufficient to meet demand at the consumer in each feasible
-            # scenario.
-            m.addConstr(
-                x[fac_indices].sum() >= (1 - z[scen]) * d,
-                name=f"{sink} upstream facility capacity",
-            )
+    to_sinks = [data.edge_indices_to(sink) for sink in data.sinks()]
+    to_sinks = list(itertools.chain(*to_sinks))  # type: ignore
 
     for scen in range(data.num_scenarios):
-        supply = np.array([src.supply[scen] for src in data.sources()])
-        src_idcs = [data.edge_index_of((src, src)) for src in data.sources()]
-        lhs = supply @ x[src_idcs]
-
         demand = sum(sink.demand[scen] for sink in data.sinks())
-        rhs = (1 - z[scen]) * demand
 
-        # We need at least enough source production to meet demand in each
-        # scenario we make feasible.
-        m.addConstr(lhs >= rhs, name=f"scen[{scen}] supply")
+        # Source cut
+        m.addConstr(x[from_sources].sum() >= demand * (1 - z[scen]))
 
-    # TODO layer capacity (see other repository for some pointers)
+        # Sink cut
+        m.addConstr(x[to_sinks].sum() >= demand * (1 - z[scen]))
+
+        # Individual consumer capacities
+        for sink in data.sinks():
+            rhs = sink.demand[scen] * (1 - z[scen])
+            m.addConstr(x[data.edge_indices_to(sink)].sum() >= rhs)
+
+        # More-or-less balance constraints on vertices
+        # TODO
