@@ -135,7 +135,7 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
     for fac in facilities:
         capacity = np.ones((num_scen,))
         cost = np.random.uniform(5, 10)
-        edges.append(Edge(fac, fac, cost, capacity, "C"))
+        edges.append(Edge(fac, fac, cost, capacity, "B"))
 
     # Now we connect all nodes together with edges.
     for out_layer, in_layer in pairwise([sources, *layers, sinks]):

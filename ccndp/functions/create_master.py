@@ -99,5 +99,10 @@ def add_constrs(
             rhs = sink.demand[scen] * (1 - z[scen])
             m.addConstr(x[data.edge_indices_to(sink)].sum() >= rhs)
 
-        # More-or-less balance constraints on vertices
-        # TODO
+        # More-or-less balance constraints on vertices. These only work for
+        # continuous edge variables, but our problem has those in both the
+        # numerical experiments and case study.
+        for fac in data.facilities():
+            to_fac = x[data.edge_indices_to(fac)]
+            frm_fac = x[data.edge_indices_from(fac)]
+            m.addConstr(to_fac.sum() >= frm_fac.sum())
