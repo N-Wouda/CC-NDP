@@ -40,7 +40,7 @@ def make_experiment_settings():
         num_nodes=[12, 24, 36],
         num_layers=[1, 2],
         num_scen=[25, 50, 100, 200],
-        num_res=[0, 1, 2],
+        num_res=[0, 1, 2, 3],
     )
 
     num_levels = [len(level) for level in levels.values()]
@@ -79,7 +79,7 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
     ]
 
     # Node data: supply (SourceNode), demand (SinkNode), and the node locations
-    supply = np.around(np.random.uniform(50, 100, (num_nodes, num_scen)), 2)
+    supply = np.around(np.random.uniform(100, 200, (num_nodes, num_scen)), 2)
     demand = np.around(np.random.uniform(0, 50, (num_nodes, num_scen)), 2)
     locs = np.around(np.random.uniform(0, 10, (3 * num_nodes, 2)), 2)
 
