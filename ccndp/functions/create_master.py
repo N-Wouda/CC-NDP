@@ -73,9 +73,6 @@ def add_constrs(
 
     # VALID INEQUALITIES ------------------------------------------------------
 
-    # TODO these need to be updated with eta/node types (see also other repo
-    #  for some pointers on how to do that).
-
     if no_vis:  # do not add valid inequalities
         return
 
@@ -88,21 +85,31 @@ def add_constrs(
     for scen in range(data.num_scenarios):
         demand = sum(sink.demand[scen] for sink in data.sinks())
 
-        # Source cut
+        # Source cut.
         m.addConstr(x[from_sources].sum() >= demand * (1 - z[scen]))
 
-        # Sink cut
+        # Sink cut.
         m.addConstr(x[to_sinks].sum() >= demand * (1 - z[scen]))
 
-        # Individual consumer capacities
+        # Individual consumer demands, and the capacities of edges feeding
+        # directly into that consumer.
         for sink in data.sinks():
             rhs = sink.demand[scen] * (1 - z[scen])
             m.addConstr(x[data.edge_indices_to(sink)].sum() >= rhs)
 
-        # More-or-less balance constraints on vertices. These only work for
-        # continuous edge variables, but our problem has those in both the
-        # numerical experiments and case study.
-        for fac in data.facilities():
-            to_fac = x[data.edge_indices_to(fac)]
-            frm_fac = x[data.edge_indices_from(fac)]
-            m.addConstr(to_fac.sum() >= frm_fac.sum())
+    # The capacity of any edge into a facility should not exceed the facility
+    # capacity. Similarly, the capacity of the edges out of the facility should
+    # not exceed the facility capacity. We take the worst-case capacities over
+    # all scenarios to limit the number of constraints.
+    for fac in data.facilities():
+        fac_edge_idx = data.edge_index_of((fac, fac))
+        fac_edge = data.edges[fac_edge_idx]
+        rhs = fac_edge.capacity.max() * x[fac_edge_idx]
+
+        for to in data.edge_indices_to(fac):
+            to_capacity = data.edges[to].capacity.max()
+            m.addConstr(to_capacity * x[to] <= rhs)
+
+        for frm in data.edge_indices_from(fac):
+            frm_capacity = data.edges[frm].capacity.max()
+            m.addConstr(frm_capacity * x[frm] <= rhs)
