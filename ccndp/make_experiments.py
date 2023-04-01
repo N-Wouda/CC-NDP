@@ -133,7 +133,7 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
         edges.append(Edge(src, src, cost, capacity, "B"))
 
     for fac in facilities:
-        capacity = np.ones((num_scen,))
+        capacity = 200 * np.ones((num_scen,))
         cost = np.random.uniform(5, 10)
         edges.append(Edge(fac, fac, cost, capacity, "B"))
 

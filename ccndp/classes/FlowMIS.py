@@ -15,6 +15,6 @@ class FlowMIS(SNC):
         demands = np.array([name.startswith("demand") for name in self.cname])
         demands = demands[..., np.newaxis]
 
-        return self.model.addMConstrs(
+        return self.model.addMConstr(
             hstack([self.W, demands]), None, self.senses, self.h
-        )
+        ).tolist()

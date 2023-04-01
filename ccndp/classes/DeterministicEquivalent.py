@@ -85,7 +85,7 @@ class DeterministicEquivalent:
         m = np.zeros_like(sub.h)
         m[-1] = 1.01 * sub.h[-1]  # times 1.01 to avoid numerical issues
 
-        self.model.addMConstrs(
+        self.model.addMConstr(
             hstack([sub.T, sub.W, m]),
             x + f.tolist() + [z],
             sense=sub.senses,

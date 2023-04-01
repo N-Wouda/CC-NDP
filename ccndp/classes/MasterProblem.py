@@ -59,7 +59,7 @@ class MasterProblem:
         self._x = dec_vars[:-num_scenarios]
         self._z = dec_vars[-num_scenarios:]
 
-        constrs = self.model.addMConstrs(A=A, x=None, sense=sense, b=b)
+        constrs = self.model.addMConstr(A=A, x=None, sense=sense, b=b)
 
         for var, name in zip(dec_vars, vname):
             var.varName = name

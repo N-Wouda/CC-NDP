@@ -32,9 +32,9 @@ class BB(SubProblem):
         identity = eye(self.W.shape[0])
         identity.setdiag([sense2sign[sense] for sense in self.senses])
 
-        return self.model.addMConstrs(
+        return self.model.addMConstr(
             hstack([self.W, identity]),
             None,
             self.senses,
             self.h,
-        )
+        ).tolist()

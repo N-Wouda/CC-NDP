@@ -8,7 +8,6 @@ import logging.config
 from argparse import ArgumentParser
 from typing import Optional
 
-import numpy as np
 import yaml  # type: ignore
 
 # Must precede any imports, see https://stackoverflow.com/a/20280587.
@@ -32,7 +31,6 @@ def parse_args():
     # General arguments for the entire program.
     parser.add_argument("data_loc", help="File system data location.")
     parser.add_argument("res_loc", help="File system result location.")
-    parser.add_argument("seed", type=int, help="Seed for the PRNG.")
     parser.add_argument("alpha", type=float, help="Infeasibility parameter.")
     parser.add_argument(
         "--no_vis", action="store_true", help="Do not add valid inequalities."
@@ -78,7 +76,6 @@ def run_root_relaxation(data, master, args) -> RootResult:  # noqa
 
 def main():
     args = parse_args()
-    np.random.seed(args.seed)
 
     data = ProblemData.from_file(args.data_loc)
     master = create_master(data, args.alpha, args.no_vis)

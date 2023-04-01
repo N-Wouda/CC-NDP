@@ -30,6 +30,6 @@ class SNC(SubProblem):
         one = np.array([sense2sign[sense] for sense in self.senses])
         one.shape = (len(one), 1)
 
-        return self.model.addMConstrs(
+        return self.model.addMConstr(
             hstack([self.W, one]), None, self.senses, self.h
-        )
+        ).tolist()

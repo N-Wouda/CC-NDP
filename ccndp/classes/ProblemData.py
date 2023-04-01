@@ -8,6 +8,7 @@ import numpy as np
 from ccndp.utils import JsonStorableMixin
 
 from .Edge import Edge
+from .FacilityNode import FacilityNode
 from .Node import Node
 from .Resource import Resource
 from .Result import Result
@@ -70,17 +71,33 @@ class ProblemData(JsonStorableMixin):
         return np.array([edge.vtype for edge in self.edges])
 
     def edge_indices_from(self, node: Node) -> list[int]:
+        """
+        Implements O(i) from the paper, for a given vertex i.
+        """
         return [
             idx
             for idx, edge in enumerate(self.edges)
             if edge.frm == node and edge.to != node
         ]
 
-    def edge_indices_to(self, node: Node) -> list[int]:
-        return [
+    def edge_indices_to(self, node: Node, res: Resource = None) -> list[int]:
+        """
+        Implements I(i, r) and I(i) from the paper, for a given vertex i and
+        optional resource r.
+        """
+        edges = [
             idx
             for idx, edge in enumerate(self.edges)
             if edge.to == node and edge.frm != node
+        ]
+
+        if not res:  # return I(i)
+            return edges
+
+        return [  # return I(i, r)
+            idx
+            for idx in edges
+            if self.edges[idx].frm.makes == res  # type: ignore
         ]
 
     def edge_index_of(self, pair: tuple[Node, Node]) -> int:
@@ -93,12 +110,8 @@ class ProblemData(JsonStorableMixin):
     def sources(self) -> list[SourceNode]:
         return [node for node in self.nodes if isinstance(node, SourceNode)]
 
-    def facilities(self) -> list[Node]:
-        return [
-            node
-            for node in self.nodes
-            if not isinstance(node, (SourceNode, SinkNode))
-        ]
+    def facilities(self) -> list[FacilityNode]:
+        return [node for node in self.nodes if isinstance(node, FacilityNode)]
 
     def sinks(self) -> list[SinkNode]:
         return [node for node in self.nodes if isinstance(node, SinkNode)]
