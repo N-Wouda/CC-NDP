@@ -1,5 +1,6 @@
 import itertools
 
+import numpy as np
 from gurobipy import MVar, Model
 
 from ccndp.classes import MasterProblem, ProblemData
@@ -76,6 +77,7 @@ def add_constrs(
     if no_vis:  # do not add valid inequalities
         return
 
+    sources = [data.edge_index_of((src, src)) for src in data.sources()]
     from_sources = [data.edge_indices_from(src) for src in data.sources()]
     from_sources = list(itertools.chain(*from_sources))  # type: ignore
 
@@ -83,9 +85,11 @@ def add_constrs(
     to_sinks = list(itertools.chain(*to_sinks))  # type: ignore
 
     for scen in range(data.num_scenarios):
+        src_capacity = np.array([src.supply[scen] for src in data.sources()])
         demand = sum(sink.demand[scen] for sink in data.sinks())
 
-        # Source cut.
+        # Source cuts.
+        m.addConstr(src_capacity @ x[sources] >= demand * (1 - z[scen]))
         m.addConstr(x[from_sources].sum() >= demand * (1 - z[scen]))
 
         # Sink cut.
@@ -102,6 +106,7 @@ def add_constrs(
     # not exceed the facility capacity. We take the worst-case capacities over
     # all scenarios to limit the number of constraints.
     for fac in data.facilities():
+        # TODO also sources, other nodes?
         fac_edge_idx = data.edge_index_of((fac, fac))
         fac_edge = data.edges[fac_edge_idx]
         rhs = fac_edge.capacity.max() * x[fac_edge_idx]

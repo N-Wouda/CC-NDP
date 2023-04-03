@@ -79,8 +79,8 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
     ]
 
     # Node data: supply (SourceNode), demand (SinkNode), and the node locations
-    supply = np.around(np.random.uniform(100, 200, (num_nodes, num_scen)), 2)
-    demand = np.around(np.random.uniform(0, 50, (num_nodes, num_scen)), 2)
+    supply = np.around(np.random.uniform(10, 20, (num_nodes, num_scen)), 2)
+    demand = np.around(np.random.uniform(1, 5, (num_nodes, num_scen)), 2)
     locs = np.around(np.random.uniform(0, 10, (3 * num_nodes, 2)), 2)
 
     # Node sets: sources, facilities, and sinks, and what they make and need.
@@ -133,7 +133,7 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
         edges.append(Edge(src, src, cost, capacity, "B"))
 
     for fac in facilities:
-        capacity = 200 * np.ones((num_scen,))
+        capacity = 20 * np.ones((num_scen,))
         cost = np.random.uniform(5, 10)
         edges.append(Edge(fac, fac, cost, capacity, "B"))
 

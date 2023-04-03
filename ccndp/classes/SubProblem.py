@@ -67,12 +67,14 @@ class SubProblem(ABC):
         return NotImplemented
 
     def cut(self) -> Cut:
-        duals = np.array([constr.pi for constr in self._constrs])
-
+        duals = self.duals()
         beta = duals.transpose() @ self.T
         gamma = float(duals @ self.h)
 
         return Cut(beta, gamma, self.scenario)
+
+    def duals(self) -> np.ndarray:
+        return np.array([constr.pi for constr in self._constrs])
 
     def is_feasible(self) -> bool:
         return np.isclose(self.objective(), 0.0)  # type: ignore

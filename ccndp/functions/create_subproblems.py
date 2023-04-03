@@ -126,7 +126,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     W = csr_matrix(mat[:, data.num_edges :])
     h = [constr.rhs for constr in constrs]
     senses = [constr.sense for constr in constrs]
-    vname = [var.VarName for var in dec_vars[data.num_edges :]]
+    vname = [var.varName for var in dec_vars[data.num_edges :]]
     cname = [constr.constrName for constr in constrs]
 
     return cls(T, W, h, senses, vname, cname, scen)

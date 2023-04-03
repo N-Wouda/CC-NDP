@@ -19,7 +19,7 @@ class Edge:
     to: Node
     cost: float
     capacity: np.array  # capacity per scenario
-    vtype: str
+    vtype: str = "C"
 
     def __str__(self) -> str:
         if str(self.frm) == str(self.to):
