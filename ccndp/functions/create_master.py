@@ -77,22 +77,29 @@ def add_constrs(
     if no_vis:  # do not add valid inequalities
         return
 
-    sources = [data.edge_index_of((src, src)) for src in data.sources()]
+    src_idcs = [data.edge_index_of((src, src)) for src in data.sources()]
     from_sources = [data.edge_indices_from(src) for src in data.sources()]
     from_sources = list(itertools.chain(*from_sources))  # type: ignore
+
+    fac_idcs = [data.edge_index_of((fac, fac)) for fac in data.facilities()]
+    fac_edges = [data.edges[idx] for idx in fac_idcs]
 
     to_sinks = [data.edge_indices_to(sink) for sink in data.sinks()]
     to_sinks = list(itertools.chain(*to_sinks))  # type: ignore
 
     for scen in range(data.num_scenarios):
-        src_capacity = np.array([src.supply[scen] for src in data.sources()])
         demand = sum(sink.demand[scen] for sink in data.sinks())
 
-        # Source cuts.
-        m.addConstr(src_capacity @ x[sources] >= demand * (1 - z[scen]))
+        # Source cuts on the source facilities, and on the outgoing edges.
+        src_capacity = np.array([src.supply[scen] for src in data.sources()])
+        m.addConstr(src_capacity @ x[src_idcs] >= demand * (1 - z[scen]))
         m.addConstr(x[from_sources].sum() >= demand * (1 - z[scen]))
 
-        # Sink cut.
+        # Cut on the facility edges.
+        fac_capacity = np.array([edge.capacity[scen] for edge in fac_edges])
+        m.addConstr(fac_capacity @ x[fac_idcs] >= demand * (1 - z[scen]))
+
+        # Cut on the incoming edges at the sinks.
         m.addConstr(x[to_sinks].sum() >= demand * (1 - z[scen]))
 
         # Individual consumer demands, and the capacities of edges feeding
@@ -101,20 +108,19 @@ def add_constrs(
             rhs = sink.demand[scen] * (1 - z[scen])
             m.addConstr(x[data.edge_indices_to(sink)].sum() >= rhs)
 
-    # The capacity of any edge into a facility should not exceed the facility
-    # capacity. Similarly, the capacity of the edges out of the facility should
-    # not exceed the facility capacity. We take the worst-case capacities over
+    # The capacity of any edge into a source or facility should not exceed the
+    # node's capacity. Similarly, the capacity of the outgoing edges should
+    # not exceed the node capacity. We take the worst-case capacities over
     # all scenarios to limit the number of constraints.
-    for fac in data.facilities():
-        # TODO also sources, other nodes?
-        fac_edge_idx = data.edge_index_of((fac, fac))
-        fac_edge = data.edges[fac_edge_idx]
-        rhs = fac_edge.capacity.max() * x[fac_edge_idx]
+    for node in data.facilities() + data.sources():
+        node_edge_idx = data.edge_index_of((node, node))
+        node_edge = data.edges[node_edge_idx]
+        rhs = node_edge.capacity.max() * x[node_edge_idx]
 
-        for to in data.edge_indices_to(fac):
-            to_capacity = data.edges[to].capacity.max()
-            m.addConstr(to_capacity * x[to] <= rhs)
+        for to in data.edge_indices_to(node):  # empty for source nodes
+            if (edge := data.edges[to]).vtype == "C":
+                m.addConstr(edge.capacity.max() * x[to] <= rhs)
 
-        for frm in data.edge_indices_from(fac):
-            frm_capacity = data.edges[frm].capacity.max()
-            m.addConstr(frm_capacity * x[frm] <= rhs)
+        for frm in data.edge_indices_from(node):
+            if (edge := data.edges[frm]).vtype == "C":
+                m.addConstr(edge.capacity.max() * x[frm] <= rhs)
