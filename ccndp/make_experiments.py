@@ -40,7 +40,7 @@ def make_experiment_settings():
         num_nodes=[12, 24, 36],
         num_layers=[1, 2],
         num_scen=[25, 50, 100, 200],
-        num_res=[0, 1, 2, 3],
+        num_res=[1, 2, 3],
     )
 
     num_levels = [len(level) for level in levels.values()]
@@ -55,14 +55,8 @@ def make_experiment_settings():
             exp[k] = v[int(idx)]
 
         # With just one layer, we have source -> facility -> sink, so there's
-        # no resources other than the source and sink resources.
-        if exp["num_res"] > 0 and exp["num_layers"] == 1:
-            continue
-
-        # With more than one layer, we have source -> facility1 -> facility2
-        # -> sink, so there is at least one resource needed between facility1
-        # and facility2 (and possibly more)
-        if exp["num_res"] == 0 and exp["num_layers"] == 2:
+        # need for only one resource for the facilities.
+        if exp["num_res"] > 1 and exp["num_layers"] == 1:
             continue
 
         exp["index"] = next(exp_number)
@@ -79,7 +73,7 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
     ]
 
     # Node data: supply (SourceNode), demand (SinkNode), and the node locations
-    supply = np.around(np.random.uniform(10, 20, (num_nodes, num_scen)), 2)
+    supply = np.around(np.random.uniform(15, 30, (num_nodes, num_scen)), 2)
     demand = np.around(np.random.uniform(1, 5, (num_nodes, num_scen)), 2)
     locs = np.around(np.random.uniform(0, 10, (3 * num_nodes, 2)), 2)
 
@@ -92,7 +86,7 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
     fac_locs = locs[num_nodes:]
 
     if num_layers == 1:
-        assert num_res == 0
+        assert num_res == 1
         fac_makes = [resources[-1] for _ in range(num_nodes)]
         fac_needs = [(resources[0],) for _ in range(num_nodes)]
     elif num_layers == 2:
@@ -133,7 +127,7 @@ def make_experiment(where, num_scen, num_nodes, num_layers, num_res, **kwargs):
         edges.append(Edge(src, src, cost, capacity, "B"))
 
     for fac in facilities:
-        capacity = 20 * np.ones((num_scen,))
+        capacity = 30 * np.ones((num_scen,))
         cost = np.random.uniform(5, 10)
         edges.append(Edge(fac, fac, cost, capacity, "B"))
 
