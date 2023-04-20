@@ -37,7 +37,7 @@ def parse_args():
 
 def make_experiment_settings():
     levels = dict(
-        num_nodes=[12, 24, 36],
+        num_nodes=[12, 18, 24],
         num_layers=[1, 2],
         num_scen=[25, 50, 100, 200],
         num_res=[1, 2, 3],
