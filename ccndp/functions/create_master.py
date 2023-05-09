@@ -1,4 +1,4 @@
-import itertools
+from itertools import chain
 
 import numpy as np
 from gurobipy import MVar, Model
@@ -79,13 +79,14 @@ def add_constrs(
 
     src_idcs = [data.edge_index_of((src, src)) for src in data.sources()]
     from_sources = [data.edge_indices_from(src) for src in data.sources()]
-    from_sources = list(itertools.chain(*from_sources))  # type: ignore
+    from_sources = list(chain(*from_sources))  # type: ignore
 
-    fac_idcs = [data.edge_index_of((fac, fac)) for fac in data.facilities()]
+    facs = data.facilities()
+    fac_idcs = [data.edge_index_of((fac, fac)) for fac in facs]
     fac_edges = [data.edges[idx] for idx in fac_idcs]
 
     to_sinks = [data.edge_indices_to(sink) for sink in data.sinks()]
-    to_sinks = list(itertools.chain(*to_sinks))  # type: ignore
+    to_sinks = list(chain(*to_sinks))  # type: ignore
 
     for scen in range(data.num_scenarios):
         demand = sum(sink.demand[scen] for sink in data.sinks())
@@ -99,19 +100,29 @@ def add_constrs(
         fac_capacity = np.array([edge.capacity[scen] for edge in fac_edges])
         m.addConstr(fac_capacity @ x[fac_idcs] >= demand * (1 - z[scen]))
 
+        # The following resource-specific cuts are valid interpretations of
+        # the overall facility cuts when the resource forms a layer in the
+        # network. These need not hold for general networks, but are typically
+        # true for a great many supply chain networks.
         for res in {edge.resource for edge in fac_edges}:
-            # Resource-specific cut. These are valid interpretations of the
-            # overall facility cuts only when the resource forms a 'layer' in
-            # the overall network.
             res_edges = [
                 (idx, edge)
                 for idx, edge in zip(fac_idcs, fac_edges)
                 if edge.resource == res
             ]
 
+            # Constructions for each resource made by facilities.
             idcs = [idx for idx, _ in res_edges]
             caps = np.array([edge.capacity[scen] for _, edge in res_edges])
             m.addConstr(caps @ x[idcs] >= demand * (1 - z[scen]))
+
+        res_in = set(chain.from_iterable(fac.needs for fac in facs))
+        for res in res_in:
+            # Edges flowing into the facilities with a resource the facility
+            # needs. These together should also be sufficient to meet demand.
+            facs_in = [data.edge_indices_to(fac, res) for fac in facs]
+            facs_in = list(chain(*facs_in))  # type: ignore
+            m.addConstr(x[facs_in].sum() >= demand * (1 - z[scen]))
 
         # Cut on the incoming edges at the sinks.
         m.addConstr(x[to_sinks].sum() >= demand * (1 - z[scen]))
