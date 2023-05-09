@@ -91,14 +91,10 @@ class ProblemData(JsonStorableMixin):
             if edge.to == node and edge.frm != node
         ]
 
-        if not res:  # return I(i)
+        if not res:  # return I(i); r was not specified so default all.
             return edges
 
-        return [  # return I(i, r)
-            idx
-            for idx in edges
-            if self.edges[idx].frm.makes == res  # type: ignore
-        ]
+        return [idx for idx in edges if self.edges[idx].resource == res]
 
     def edge_index_of(self, pair: tuple[Node, Node]) -> int:
         for idx, edge in enumerate(self.edges):

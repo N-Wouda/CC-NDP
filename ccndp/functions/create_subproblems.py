@@ -100,7 +100,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
 
             for edge, flow in zip(edges_in, f_in):
                 assert isinstance(edge.frm, (Source, Facility))
-                by_res[edge.frm.makes].append(flow)
+                by_res[edge.resource].append(flow)
 
             for res, flows in by_res.items():
                 m.addConstr(

@@ -4,16 +4,8 @@ further information on the available options.
 """
 from __future__ import annotations
 
-import logging.config
 from argparse import ArgumentParser
 from typing import Optional
-
-import yaml  # type: ignore
-
-# Must precede any imports, see https://stackoverflow.com/a/20280587.
-with open("logging.yaml", "r") as file:
-    log_settings = yaml.safe_load(file.read())
-    logging.config.dictConfig(log_settings)
 
 from ccndp.classes import (
     FORMULATIONS,

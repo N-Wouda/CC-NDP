@@ -99,6 +99,20 @@ def add_constrs(
         fac_capacity = np.array([edge.capacity[scen] for edge in fac_edges])
         m.addConstr(fac_capacity @ x[fac_idcs] >= demand * (1 - z[scen]))
 
+        for res in {edge.resource for edge in fac_edges}:
+            # Resource-specific cut. These are valid interpretations of the
+            # overall facility cuts only when the resource forms a 'layer' in
+            # the overall network.
+            res_edges = [
+                (idx, edge)
+                for idx, edge in zip(fac_idcs, fac_edges)
+                if edge.resource == res
+            ]
+
+            idcs = [idx for idx, _ in res_edges]
+            caps = np.array([edge.capacity[scen] for _, edge in res_edges])
+            m.addConstr(caps @ x[idcs] >= demand * (1 - z[scen]))
+
         # Cut on the incoming edges at the sinks.
         m.addConstr(x[to_sinks].sum() >= demand * (1 - z[scen]))
 
