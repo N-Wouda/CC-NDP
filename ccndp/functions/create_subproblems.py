@@ -54,8 +54,7 @@ def _create_subproblem(data: ProblemData, cls: Type[SubProblem], scen: int):
     # Subsets of the flow variables related to the artificial edges and nodes
     # inserted into the network flow graph. f_source are all flows from the
     # artificial source s to the sources in the actual graph, f_sink all flows
-    # from sinks in the actual graph to the artificial sink t, and f_t the
-    # collected flow at t.
+    # from sinks in the actual graph to the artificial sink t.
     f_source = f[num_x_edges : num_x_edges + len(sources)]
     f_sink = f[-len(sinks) :]
 
