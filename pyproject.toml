@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "CC-NDP"
 version = "1.0.0"
-description = "Chance-constrained network design problem"
+description = "Chance-constrained network design problem."
 authors = ["Niels Wouda <n.a.wouda@rug.nl>"]
 license = "MIT"
 repository = "https://github.com/N-Wouda/CC-NDP"
@@ -10,7 +10,8 @@ include=[
     "README.md"
 ]
 packages = [
-    { include = "ccndp" }
+    { include = "ccndp" },
+    { include = "case" },
 ]
 
 [tool.poetry.dependencies]
@@ -30,6 +31,7 @@ black = "^23.1.0"
 solve = "ccndp.solve:main"
 make_experiments = "ccndp.make_experiments:main"
 plot = "ccndp.plot:main"
+case = "case.solve:main"
 
 [tool.black]
 line-length = 79
