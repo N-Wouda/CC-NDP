@@ -166,5 +166,5 @@ class ProblemData(JsonStorableMixin):
 def annotate(ax: plt.Axes, items: np.array, locations: np.array):
     style = dict(bbox=dict(boxstyle="round", fc="w"), fontsize=8)
 
-    for i, (loc, num) in enumerate(zip(locations, items)):
+    for loc, num in zip(locations, items):
         ax.annotate(f"{num:.1f}", loc + 0.05, **style)
