@@ -34,10 +34,16 @@ plot = "ccndp.plot:main"
 [tool.black]
 line-length = 79
 
-[tool.isort]
-case_sensitive = true
-line_length = 79
-profile = "black"
+[tool.ruff]
+ignore-init-module-imports = true
+line-length = 79
+select = [
+    "E", "F", "I", "NPY", "PYI", "Q", "RET", "RSE", "RUF", "SLF", "SIM", "TCH"
+]
+
+[tool.ruff.isort]
+case-sensitive = true
+known-first-party = ["src"]
 
 [tool.mypy]
 ignore_missing_imports = true

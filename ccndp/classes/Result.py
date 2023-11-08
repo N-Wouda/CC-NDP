@@ -78,7 +78,7 @@ class Result(JsonStorableMixin):
         ax.plot(x, self.run_times)
 
         if self.num_iters > 1:
-            b, c = np.polyfit(x, self.run_times, 1)  # noqa
+            b, c = np.polyfit(x, self.run_times, 1)
             ax.plot(b * x + c)
 
         ax.set_xlim(left=0)

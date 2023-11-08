@@ -32,7 +32,7 @@ class ProblemData:
     @property
     def num_commodities(self) -> int:
         return len(self.commodities)
-    
+
     @property
     def num_scenarios(self) -> int:
         return len(self.probabilities)
@@ -42,9 +42,7 @@ class ProblemData:
         Implements N_i(+) from the paper, for a given node i.
         """
         return [
-            idx
-            for idx, arc in enumerate(self.arcs)
-            if arc.from_node == node
+            idx for idx, arc in enumerate(self.arcs) if arc.from_node == node
         ]
 
     def arc_indices_to(self, node: int) -> list[int]:
@@ -52,9 +50,7 @@ class ProblemData:
         Implements N_i(-) from the paper, for a given node i.
         """
         return [
-            idx
-            for idx, arc in enumerate(self.arcs)
-            if arc.to_node == node
+            idx for idx, arc in enumerate(self.arcs) if arc.to_node == node
         ]
 
     @classmethod
@@ -70,32 +66,27 @@ class ProblemData:
 
         # First line specifies number of nodes, arcs, commodities.
         num_nodes, num_arcs, num_commodities = map(int, next(lines).split())
-    
+
         # Next num_arcs lines specify arc data.
         arcs: list[Arc] = []
         for _ in range(num_arcs):
             attributes = map(float, next(lines).split())
-            arcs.append(Arc(
-                from_node=int(attributes[0]),
-                to_node=int(attributes[1]),
-                var_cost=attributes[2],
-                capacity=attributes[3],
-                fixed_cost=attributes[4],
-            ))
+            arcs.append(
+                Arc(
+                    from_node=int(attributes[0]),
+                    to_node=int(attributes[1]),
+                    var_cost=attributes[2],
+                    capacity=attributes[3],
+                    fixed_cost=attributes[4],
+                )
+            )
 
         # Next num_commodities lines specify commodity data.
         commodities: list[Commodity] = []
         for _ in range(num_commodities):
             from_node, to_node, demand = map(float, next(lines).split())
-            commodities.append(Commodity(
-                int(from_node), 
-                int(to_node),
-                [demand]
-            ))
+            commodities.append(
+                Commodity(int(from_node), int(to_node), [demand])
+            )
 
-        return cls(
-            num_nodes,
-            arcs,
-            commodities,
-            [1.]
-        )
+        return cls(num_nodes, arcs, commodities, [1.0])

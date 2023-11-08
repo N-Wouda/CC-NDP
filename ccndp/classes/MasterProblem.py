@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from gurobipy import GRB, LinExpr, Model
-from scipy.sparse import csr_matrix
 
 from ccndp.config import DEFAULT_MASTER_PARAMS
 
-from .Cut import Cut
 from .Result import Result
 from .RootResult import RootResult
-from .SubProblem import SubProblem
+
+if TYPE_CHECKING:
+    from scipy.sparse import csr_matrix
+
+    from .Cut import Cut
+    from .SubProblem import SubProblem
 
 logger = logging.getLogger(__name__)
 

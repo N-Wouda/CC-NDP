@@ -62,7 +62,7 @@ def run_deq(data, master, args) -> Optional[Result]:
     return dq.solve(time_limit=args.time_limit)
 
 
-def run_root_relaxation(data, master, args) -> RootResult:  # noqa
+def run_root_relaxation(data, master, args) -> RootResult:
     return master.compute_root_relaxation()
 
 

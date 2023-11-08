@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from ccndp.utils import JsonStorableMixin
 
-from .Edge import Edge
 from .FacilityNode import FacilityNode
-from .Node import Node
-from .Resource import Resource
-from .Result import Result
 from .SinkNode import SinkNode
 from .SourceNode import SourceNode
+
+if TYPE_CHECKING:
+    from .Edge import Edge
+    from .Node import Node
+    from .Resource import Resource
+    from .Result import Result
 
 
 @dataclass(frozen=True)

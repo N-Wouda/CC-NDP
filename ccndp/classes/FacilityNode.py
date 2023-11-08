@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from .Node import Node
-from .Resource import Resource
+
+if TYPE_CHECKING:
+    from .Resource import Resource
 
 
 @dataclass(frozen=True)

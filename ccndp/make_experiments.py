@@ -13,9 +13,8 @@ import numpy as np
 from pyDOE2 import fullfact
 from scipy.spatial import distance
 
-from ccndp.classes import Edge
+from ccndp.classes import Edge, ProblemData, Resource
 from ccndp.classes import FacilityNode as Facility
-from ccndp.classes import ProblemData, Resource
 from ccndp.classes import SinkNode as Sink
 from ccndp.classes import SourceNode as Source
 from ccndp.functions import pairwise

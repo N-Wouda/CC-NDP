@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 import numpy as np
 from gurobipy import GRB, Constr, Model, Var
-from scipy.sparse import csr_matrix
 
 from ccndp.config import DEFAULT_SUB_PARAMS
 
 from .Cut import Cut
+
+if TYPE_CHECKING:
+    from scipy.sparse import csr_matrix
 
 logger = logging.getLogger(__name__)
 

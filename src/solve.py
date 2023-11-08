@@ -44,7 +44,7 @@ def run_decomp(data, master, args) -> Result:
     return master.solve_decomposition(subs)
 
 
-def run_root_relaxation(data, master, args) -> RootResult:  # noqa
+def run_root_relaxation(data, master, args) -> RootResult:
     return master.compute_root_relaxation()
 
 

@@ -1,13 +1,12 @@
-from collections import defaultdict
-
-import numpy as np
 from gurobipy import Model
 from scipy.sparse import csr_matrix
 
 from src.classes import ProblemData, SubProblem
 
 
-def create_subproblems(data: ProblemData, cls: type[SubProblem]) -> list[SubProblem]:
+def create_subproblems(
+    data: ProblemData, cls: type[SubProblem]
+) -> list[SubProblem]:
     """
     Creates the subproblems.
 
@@ -24,17 +23,20 @@ def create_subproblems(data: ProblemData, cls: type[SubProblem]) -> list[SubProb
         List of created subproblems. These are instance of the ``cls`` passed
         into this function.
     """
-    return [_create_subproblem(data, cls, scen) for scen in range(data.num_scenarios)]
+    return [
+        _create_subproblem(data, cls, scen)
+        for scen in range(data.num_scenarios)
+    ]
 
 
 def _create_subproblem(data: ProblemData, cls: type[SubProblem], scen: int):
     num_y_edges = data.num_edges  # constructed by master problem
-    num_x_edges = num_y_edges + ... # second-stage flow variables
+    num_x_edges = num_y_edges + ...  # second-stage flow variables
 
     m = Model()
 
-    y = m.addMVar((num_y_edges,), name="y")  # first-stage vars
-    x = m.addMVar((num_x_edges,), name="x")  # second-stage vars
+    m.addMVar((num_y_edges,), name="y")  # first-stage vars
+    m.addMVar((num_x_edges,), name="x")  # second-stage vars
 
     # Capacity constraints
     # TODO

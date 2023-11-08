@@ -30,7 +30,7 @@ def create_master(
 
     # Construction decision variables, with costs and variable types as given
     # by the problem instance.
-    y = m.addMVar(
+    m.addMVar(
         (data.num_arcs,),
         obj=[arc.fixed_cost for arc in data.arcs],  # type: ignore
         vtype="B",  # type: ignore

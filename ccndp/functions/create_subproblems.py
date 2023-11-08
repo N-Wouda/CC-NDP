@@ -6,10 +6,9 @@ from gurobipy import Model
 from scipy.sparse import csr_matrix
 
 from ccndp.classes import FacilityNode as Facility
-from ccndp.classes import ProblemData
+from ccndp.classes import ProblemData, SubProblem
 from ccndp.classes import SinkNode as Sink
 from ccndp.classes import SourceNode as Source
-from ccndp.classes import SubProblem
 
 
 def create_subproblems(
