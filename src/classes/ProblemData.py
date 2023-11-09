@@ -6,7 +6,7 @@ from pathlib import Path
 class Arc:
     from_node: int
     to_node: int
-    var_cost: float
+    var_cost: float  # currently unused
     capacity: float
     fixed_cost: float
 
@@ -53,6 +53,20 @@ class ProblemData:
             idx for idx, arc in enumerate(self.arcs) if arc.to_node == node
         ]
 
+    def origins(self) -> list[int]:
+        """
+        TODO
+        """
+        origins = {c.from_node for c in self.commodities}
+        return sorted(origins)
+
+    def destinations(self) -> list[int]:
+        """
+        TODO
+        """
+        destinations = {c.to_node for c in self.commodities}
+        return sorted(destinations)
+
     @classmethod
     def from_file(cls, where: str | Path) -> "ProblemData":
         """
@@ -64,13 +78,16 @@ class ProblemData:
         with open(where) as fh:
             lines = (line.strip() for line in fh.readlines())
 
-        # First line specifies number of nodes, arcs, commodities.
+        # First line specifies "MULTIGEN.DAT:", not actual data. Skip.
+        next(lines)
+
+        # Next line specifies number of nodes, arcs, commodities.
         num_nodes, num_arcs, num_commodities = map(int, next(lines).split())
 
         # Next num_arcs lines specify arc data.
         arcs: list[Arc] = []
         for _ in range(num_arcs):
-            attributes = map(float, next(lines).split())
+            attributes = [float(v) for v in next(lines).split()]
             arcs.append(
                 Arc(
                     from_node=int(attributes[0]),

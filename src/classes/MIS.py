@@ -13,8 +13,8 @@ class MIS(SNC):
     Model looks something like:
 
         min  s
-        s.t. Wf - s1_T <= h - Tx
-                  f, s >= 0,
+        s.t. Wx - s1_T <= h - Ty
+                  x, s >= 0,
 
     where s is a scalar variable, and 1_T is a 0/1 vector of indicators that is
     1 for each non-zero row of T.

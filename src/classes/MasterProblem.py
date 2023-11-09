@@ -26,12 +26,12 @@ class MasterProblem:
 
     The model looks something like:
 
-        min  c x
-        s.t.      Ax ~ b
+        min  c y
+        s.t.      Ay ~ b
              sum(z) <= alpha N
-             x mixed-integer, z binary
+             y mixed-integer, z binary
 
-    The variables x in this model are passed to the scenario subproblems.
+    The variables y in this model are passed to the scenario subproblems.
 
     Any keyword arguments are passed to the Gurobi model as parameters.
     """
@@ -60,7 +60,7 @@ class MasterProblem:
 
         dec_vars = self.model.addMVar((len(c),), lb, ub, c, vtype).tolist()
 
-        self._x = dec_vars[:-num_scenarios]
+        self._y = dec_vars[:-num_scenarios]
         self._z = dec_vars[-num_scenarios:]
 
         constrs = self.model.addMConstr(A=A, x=None, sense=sense, b=b)
@@ -75,13 +75,13 @@ class MasterProblem:
 
     @property
     def c(self) -> np.array:
-        return np.array([x.obj for x in self._x])
+        return np.array([y.obj for y in self._y])
 
     def decisions(self) -> np.array:
-        return np.array([var.x for var in self._x])
+        return np.array([var.x for var in self._y])
 
     def decision_names(self) -> list[str]:
-        return [var.varName for var in self._x]
+        return [var.varName for var in self._y]
 
     def objective(self) -> float:
         assert self.model.status == GRB.OPTIMAL
@@ -95,7 +95,7 @@ class MasterProblem:
         """
         lhs = LinExpr()
         lhs.addTerms(cut.gamma, self._z[cut.scen])  # type: ignore
-        lhs.addTerms(cut.beta, self._x)  # type: ignore
+        lhs.addTerms(cut.beta, self._y)  # type: ignore
 
         self.model.cbLazy(lhs >= cut.gamma)
 
@@ -166,18 +166,18 @@ class MasterProblem:
             incumbent_objs.append(obj)
             run_times.append(model.cbGet(GRB.Callback.RUNTIME))
 
-            x = np.array(model.cbGetSolution(self._x))
+            y = np.array(model.cbGetSolution(self._y))
             z = np.array(model.cbGetSolution(self._z), dtype=int)
 
             for z_i, sub in zip(z, subproblems):
                 if z_i == 1:  # scenario is not selected, so is allowed to be
                     continue  # infeasible in this iteration.
 
-                sub.update_rhs(x)
+                sub.update_rhs(y)
                 sub.solve()
 
                 if not sub.is_feasible():
-                    # The new constraint "cuts off" the current solution x,
+                    # The new constraint "cuts off" the current solution y,
                     # ensuring we do not find that one again.
                     self.add_lazy_cut(sub.cut())
 

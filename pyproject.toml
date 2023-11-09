@@ -10,7 +10,7 @@ include=[
     "README.md"
 ]
 packages = [
-    { include = "ccndp" }
+    { include = "src" }
 ]
 
 [tool.poetry.dependencies]
@@ -27,9 +27,7 @@ tomli = "^2.0.1"
 black = "^23.1.0"
 
 [tool.poetry.scripts]
-solve = "ccndp.solve:main"
-make_experiments = "ccndp.make_experiments:main"
-plot = "ccndp.plot:main"
+solve = "src.solve:main"
 
 [tool.black]
 line-length = 79

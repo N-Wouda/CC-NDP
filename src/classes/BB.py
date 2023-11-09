@@ -11,10 +11,10 @@ class BB(SubProblem):
     The model looks something like this:
 
         min  sum(s)
-        s.t. Wf - Is <= h - Tx
-                f, s >= 0
+        s.t. Wx - Is <= h - Ty
+                x, s >= 0
 
-    given variables x from the master problem. Here, s is a vector of slacks,
+    given variables y from the master problem. Here, s is a vector of slacks,
     one for each constraint.
 
     Any keyword arguments are passed to the Gurobi model as parameters.
@@ -22,10 +22,10 @@ class BB(SubProblem):
 
     def _set_vars(self) -> list[Var]:
         nrow, ncol = self.W.shape
-        f = self.model.addMVar((ncol,), name="f").tolist()
+        x = self.model.addMVar((ncol,), name="x").tolist()
         s = self.model.addMVar((nrow,), obj=1, name="s").tolist()
 
-        return f + s
+        return x + s
 
     def _set_constrs(self) -> list[Constr]:
         sense2sign = {">": 1, "<": -1, "=": 0}

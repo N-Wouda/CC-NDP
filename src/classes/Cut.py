@@ -10,7 +10,7 @@ class Cut:
 
     The constraint has the following form:
 
-        gamma * z_scen >= gamma - beta @ x
+        gamma * z_scen >= gamma - beta @ y
 
     See ``MasterProblem.add_lazy_cut()`` for more details.
     """

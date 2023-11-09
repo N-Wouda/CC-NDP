@@ -44,7 +44,7 @@ def create_master(
     # At most alpha percent of the scenarios can be infeasible.
     m.addConstr(z.sum() <= alpha * data.num_scenarios, name="scenarios")
 
-    # TODO VI's
+    # TODO VI's?
 
     m.update()
 

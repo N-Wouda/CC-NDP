@@ -12,18 +12,18 @@ class SNC(SubProblem):
     The model looks something like this:
 
         min  s
-        s.t. Wf - s1 <= h - Tx
-                f, s >= 0,
+        s.t. Wx - s1 <= h - Ty
+                x, s >= 0,
 
     where s is a scalar variable.
     """
 
     def _set_vars(self) -> list[Var]:
         _, ncol = self.W.shape
-        f = self.model.addMVar((ncol,)).tolist()
+        x = self.model.addMVar((ncol,)).tolist()
         s = [self.model.addVar(obj=1, name="s")]
 
-        return f + s
+        return x + s
 
     def _set_constrs(self) -> list[Constr]:
         sense2sign = {">": 1, "<": -1, "=": 0}
