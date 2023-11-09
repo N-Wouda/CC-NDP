@@ -72,14 +72,13 @@ class ProblemData:
         """
         Parses an instance file.
         """
-        # TODO update with actual scenarios
         where = Path(where)
 
         with open(where) as fh:
             lines = (line.strip() for line in fh.readlines())
 
-        # First line specifies number of nodes, arcs, commodities.
-        num_nodes, num_arcs, num_commodities = map(int, next(lines).split())
+        # First line specifies number of nodes, arcs, commodities, scenarios.
+        num_nodes, num_arcs, num_comm, num_scen = map(int, next(lines).split())
 
         # Next num_arcs lines specify arc data.
         arcs: list[Arc] = []
@@ -95,12 +94,64 @@ class ProblemData:
                 )
             )
 
-        # Next num_commodities lines specify commodity data.
+        # Next num_comm lines specify commodity data.
         commodities: list[Commodity] = []
-        for _ in range(num_commodities):
-            from_node, to_node, demand = map(float, next(lines).split())
-            commodities.append(
-                Commodity(int(from_node), int(to_node), [demand])
-            )
+        for _ in range(num_comm):
+            from_node, to_node, *_ = map(float, next(lines).split())
+            commodities.append(Commodity(int(from_node), int(to_node), []))
 
-        return cls(num_nodes, arcs, commodities, [1.0])
+        # Next num_scen lines specify the scenarios.
+        probabilities = []
+        for _ in range(num_scen):
+            prob, *demands = map(float, next(lines).split())
+            probabilities.append(prob)
+
+            for commodity, demand in zip(commodities, demands):
+                commodity.demands.append(demand)
+
+        return cls(num_nodes, arcs, commodities, probabilities)
+
+    def to_file(self, where: str | Path):
+        """
+        Writes an instance file.
+        """
+        where = Path(where)
+
+        with open(where, "w") as fh:
+            stats = [
+                self.num_nodes,
+                self.num_arcs,
+                self.num_commodities,
+                self.num_scenarios,
+            ]
+            fh.write(" ".join(map(str, stats)) + "\n")
+
+            for arc in self.arcs:
+                attributes = [
+                    arc.from_node,
+                    arc.to_node,
+                    arc.var_cost,
+                    arc.capacity,
+                    arc.fixed_cost,
+                ]
+                fh.write(" ".join(map(str, attributes)) + "\n")
+
+            for commodity in self.commodities:
+                attributes = [commodity.from_node, commodity.to_node]
+                fh.write(" ".join(map(str, attributes)) + "\n")
+
+            for scen in range(self.num_scenarios):
+                demands = [c.demands[scen] for c in self.commodities]
+                prob = self.probabilities[scen]
+                fh.write(" ".join(map(str, [prob, *demands])) + "\n")
+
+    def __str__(self) -> str:
+        lines = [
+            "ProblemData",
+            f"      # nodes: {self.num_nodes}",
+            f"       # arcs: {self.num_arcs}",
+            f"# commodities: {self.num_commodities}",
+            f"  # scenarios: {self.num_scenarios}",
+        ]
+
+        return "\n".join(lines)
