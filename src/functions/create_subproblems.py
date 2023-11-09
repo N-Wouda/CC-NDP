@@ -112,11 +112,11 @@ def _create_subproblem(data: ProblemData, cls: type[SubProblem], scen: int):
     constrs = m.getConstrs()
     dec_vars = m.getVars()
 
-    T = csr_matrix(mat[:, : data.num_arcs])
-    W = csr_matrix(mat[:, data.num_arcs :])
+    T = csr_matrix(mat[:, :num_y_arcs])
+    W = csr_matrix(mat[:, num_y_arcs:])
     h = [constr.rhs for constr in constrs]
     senses = [constr.sense for constr in constrs]
-    vname = [var.varName for var in dec_vars[data.num_arcs :]]
+    vname = [var.varName for var in dec_vars[num_y_arcs:]]
     cname = [constr.constrName for constr in constrs]
 
     return cls(T, W, h, senses, vname, cname, scen)
