@@ -78,10 +78,7 @@ class ProblemData:
         with open(where) as fh:
             lines = (line.strip() for line in fh.readlines())
 
-        # First line specifies "MULTIGEN.DAT:", not actual data. Skip.
-        next(lines)
-
-        # Next line specifies number of nodes, arcs, commodities.
+        # First line specifies number of nodes, arcs, commodities.
         num_nodes, num_arcs, num_commodities = map(int, next(lines).split())
 
         # Next num_arcs lines specify arc data.
