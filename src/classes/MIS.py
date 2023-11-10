@@ -22,7 +22,7 @@ class MIS(SNC):
 
     def _set_constrs(self) -> list[Constr]:
         one = -np.ones((self.T.shape[0], 1))
-        one[np.isclose(self.T.sum(axis=1), 0.0)] = 0
+        one[np.isclose(self.T.sum(axis=1), 0)] = 0
 
         return self.model.addMConstr(
             hstack([self.W, one]), None, self.senses, self.h
