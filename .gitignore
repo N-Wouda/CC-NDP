@@ -134,6 +134,7 @@ dmypy.json
 
 # Data files
 data/
+results/
 
 # PDF-ified notebooks
 notebooks/*.pdf
