@@ -35,7 +35,7 @@ def create_master(
         (data.num_arcs,),
         obj=[arc.fixed_cost for arc in data.arcs],  # type: ignore
         vtype="B",  # type: ignore
-        name="y",
+        name=[str(arc) for arc in data.arcs],
     )
 
     # The z variables decide which of the scenarios must be made feasible. If

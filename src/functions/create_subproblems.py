@@ -1,4 +1,3 @@
-import numpy as np
 from gurobipy import Model
 from scipy.sparse import csr_matrix
 
@@ -31,11 +30,8 @@ def create_subproblems(
 
 
 def _create_subproblem(data: ProblemData, cls: type[SubProblem], scen: int):
-    orig = data.origins()
-    dest = data.destinations()
-
     num_y_arcs = data.num_arcs  # 1st stage arcs from master problem
-    num_x_arcs = num_y_arcs + len(orig) + len(dest)  # 2nd stage variables
+    num_x_arcs = num_y_arcs  # 2nd stage variables
 
     m = Model()
     y = m.addMVar((num_y_arcs,), name="y")  # 1st stage
@@ -54,57 +50,19 @@ def _create_subproblem(data: ProblemData, cls: type[SubProblem], scen: int):
         arc_idcs_from = data.arc_indices_from(node)
         arc_idcs_to = data.arc_indices_to(node)
 
-        if node in orig:  # at least one commodity originates here
-            idcs = [
-                idx
-                for idx, c in enumerate(data.commodities)
-                if c.from_node == node
-            ]
+        for commodity_idx, commodity in enumerate(data.commodities):
+            frm = x[arc_idcs_from, commodity_idx].sum()
+            to = x[arc_idcs_to, commodity_idx].sum()
 
-            # Capacities of artificial arcs to the origin node are non-zero
-            # only for those commodities that originate here.
-            rhs = np.zeros(data.num_commodities)
-            rhs[idcs] = [data.commodities[idx].demands[scen] for idx in idcs]
-
-            # Add artificial arc from source to the set of incoming arcs at
-            # this node, and constrain the arc's capacities.
-            idx = orig.index(node)
-            arc_idcs_to.append(num_y_arcs + idx)
-            m.addConstr(
-                x[num_y_arcs + idx, :] <= rhs,
-                name=f"capacity{'u', node}",
-            )
-
-        if node in dest:  # at least one commodity needs to go here
-            idcs = [
-                idx
-                for idx, c in enumerate(data.commodities)
-                if c.to_node == node
-            ]
-
-            # Capacities of artificial arcs from the destination node are
-            # non-zero only for those commodities that need to go here.
-            rhs = np.zeros(data.num_commodities)
-            rhs[idcs] = [data.commodities[idx].demands[scen] for idx in idcs]
-
-            # Add artificial arc to sink to the set of outgoing arcs at this
-            # node, and constrain the arc's capacities.
-            idx = dest.index(node)
-            arc_idcs_from.append(num_y_arcs + len(orig) + idx)
-            m.addConstr(
-                x[num_y_arcs + len(orig) + idx, :] <= rhs,
-                name=f"capacity{node, 'v'}",
-            )
-
-        for commodity_idx in range(data.num_commodities):
-            lhs = x[arc_idcs_from, commodity_idx].sum()
-            rhs = x[arc_idcs_to, commodity_idx].sum()
-            m.addConstr(lhs == rhs, name=f"balance{node, commodity_idx}")
-
-    # Demand constraint at the "artificial sink" v. This covers all demand
-    # across all commodities in the scenario.
-    demand = sum(c.demands[scen] for c in data.commodities)
-    m.addConstr(x[-len(dest) :, :].sum() >= demand, name="demand(v)")
+            if node == commodity.from_node:  # is the commodity origin
+                name = f"orig{node, commodity_idx}"
+                m.addConstr(frm - to <= commodity.demands[scen], name=name)
+            elif node == commodity.to_node:  # is the commodity destination
+                name = f"dest{node, commodity_idx}"
+                m.addConstr(to - frm >= commodity.demands[scen], name=name)
+            else:  # regular intermediate node
+                name = f"balance{node, commodity_idx}"
+                m.addConstr(frm == to, name=name)
 
     m.update()
 

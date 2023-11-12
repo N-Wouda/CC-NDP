@@ -10,6 +10,9 @@ class Arc:
     capacity: float
     fixed_cost: float
 
+    def __str__(self) -> str:
+        return f"{self.from_node} -> {self.to_node}"
+
 
 @dataclass
 class Commodity:
