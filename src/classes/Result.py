@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .JsonDecoder import JsonDecoder
 from .JsonEncoder import JsonEncoder
 
 
@@ -36,6 +37,17 @@ class Result:
         Total run-time (wall-time, in seconds) for the entire algorithm.
         """
         return sum(self.run_times)
+
+    @classmethod
+    def from_file(cls, loc: str, decoder=JsonDecoder) -> "Result":
+        """
+        Reads an object from the given location. Assumes the data at the given
+        location are JSON-formatted.
+        """
+        with open(loc, "r") as fh:
+            raw = json.load(fh, cls=decoder)
+
+        return cls(**raw)  # type: ignore
 
     def to_file(self, loc: str, encoder=JsonEncoder):
         """
