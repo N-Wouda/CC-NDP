@@ -31,6 +31,11 @@ def parse_args():
         choices=FORMULATIONS.keys(),
         help="Subproblem formulation.",
     )
+    decomp.add_argument(
+        "--with_combinatorial_cut",
+        action="store_true",
+        help="Also derive a combinatorial cut for each infeasible scenario.",
+    )
 
     # For the root node/VI utility.
     root = subparsers.add_parser("root", help="Root node help.")
@@ -41,7 +46,7 @@ def parse_args():
 
 def run_decomp(data, master, args) -> Result:
     subs = create_subproblems(data, FORMULATIONS[args.formulation])
-    return master.solve_decomposition(subs)
+    return master.solve_decomposition(subs, args.with_combinatorial_cut)
 
 
 def run_root_relaxation(data, master, args) -> RootResult:

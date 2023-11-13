@@ -126,7 +126,11 @@ class MasterProblem:
             self.model.objVal,
         )
 
-    def solve_decomposition(self, subproblems: list[SubProblem]) -> Result:
+    def solve_decomposition(
+        self,
+        subproblems: list[SubProblem],
+        with_combinatorial_cut: bool,
+    ) -> Result:
         """
         Solves the master/subproblem decomposition with the given subproblems.
 
@@ -142,6 +146,11 @@ class MasterProblem:
             which subproblems should be made feasible, and adds new constraints
             if they are not yet feasible. These new constraints are derived
             from the (infeasible) subproblems.
+        with_combinatorial_cut
+            When True, the decomposition also derives a combinatorial cut for
+            each infeasible scenario. Such cuts force the first-stage solution
+            to chance by opening at least one additional arc if the scenario
+            needs to be made feasible.
 
         Returns
         -------
@@ -181,15 +190,15 @@ class MasterProblem:
                     # ensuring we do not find that one again.
                     self.add_lazy_cut(sub.cut())
 
-                    # This cutthat forces the next solution y to be different
-                    # from the current one, unless this scenario is allowed to
-                    # be infeasible. This works since the current capacity is
-                    # clearly infeasible for this scenario, and at least one
-                    # arc that's currently closed needs to be opened.
-                    # TODO is this useful?
-                    lhs = np.isclose(y, 0) @ self._y
-                    rhs = 1 - self._z[sub.scenario]
-                    model.cbLazy(lhs >= rhs)
+                    if with_combinatorial_cut:
+                        # This cut forces the next solution y to be different
+                        # from the current one, unless this scenario is allowed
+                        # to be infeasible. This works since the current arc
+                        # capacity is infeasible for this scenario, and at
+                        # least one additional arc needs to be opened.
+                        lhs = np.isclose(y, 0) @ self._y
+                        rhs = 1 - self._z[sub.scenario]
+                        model.cbLazy(lhs >= rhs)
 
         self.model.optimize(callback)  # type: ignore
 
