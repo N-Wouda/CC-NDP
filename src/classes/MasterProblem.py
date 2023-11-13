@@ -181,6 +181,16 @@ class MasterProblem:
                     # ensuring we do not find that one again.
                     self.add_lazy_cut(sub.cut())
 
+                    # This cutthat forces the next solution y to be different
+                    # from the current one, unless this scenario is allowed to
+                    # be infeasible. This works since the current capacity is
+                    # clearly infeasible for this scenario, and at least one
+                    # arc that's currently closed needs to be opened.
+                    # TODO is this useful?
+                    lhs = np.isclose(y, 0) @ self._y
+                    rhs = 1 - self._z[sub.scenario]
+                    model.cbLazy(lhs >= rhs)
+
         self.model.optimize(callback)  # type: ignore
 
         return Result(
