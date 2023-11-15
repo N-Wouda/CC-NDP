@@ -1,3 +1,4 @@
+import numpy as np
 from gurobipy import Model
 from scipy.sparse import csr_matrix
 
@@ -30,12 +31,28 @@ def create_subproblems(
 
 
 def _create_subproblem(data: ProblemData, cls: type[SubProblem], scen: int):
-    num_y_arcs = data.num_arcs  # 1st stage arcs from master problem
-    num_x_arcs = num_y_arcs  # 2nd stage variables
+    demands = np.array([c.demands[scen] for c in data.commodities])
+    m = _create_model(data, demands)
 
+    mat = m.getA()
+    constrs = m.getConstrs()
+    dec_vars = m.getVars()
+
+    T = csr_matrix(mat[:, : data.num_arcs])
+    W = csr_matrix(mat[:, data.num_arcs :])
+    h = [constr.rhs for constr in constrs]
+    senses = [constr.sense for constr in constrs]
+    vname = [var.varName for var in dec_vars[data.num_arcs :]]
+    cname = [constr.constrName for constr in constrs]
+
+    return cls(T, W, h, senses, vname, cname, scen)
+
+
+def _create_model(data: ProblemData, demands: np.array) -> Model:
     m = Model()
-    y = m.addMVar((num_y_arcs,), name="y")  # 1st stage
-    x = m.addMVar((num_x_arcs, data.num_commodities), name="x")  # 2nd stage
+
+    y = m.addMVar((data.num_arcs,), name="y")  # 1st stage
+    x = m.addMVar((data.num_arcs, data.num_commodities), name="x")  # 2nd stage
 
     # Capacity constraints.
     for idx, arc in enumerate(data.arcs):
@@ -56,21 +73,8 @@ def _create_subproblem(data: ProblemData, cls: type[SubProblem], scen: int):
 
             if node == commodity.to_node:  # is the commodity destination
                 name = f"demand{node, commodity_idx}"
-                m.addConstr(to - frm >= commodity.demands[scen], name=name)
+                m.addConstr(to - frm >= demands[commodity_idx], name=name)
             elif node != commodity.from_node:  # regular intermediate node
                 m.addConstr(to == frm, name=f"balance{node, commodity_idx}")
 
-    m.update()
-
-    mat = m.getA()
-    constrs = m.getConstrs()
-    dec_vars = m.getVars()
-
-    T = csr_matrix(mat[:, :num_y_arcs])
-    W = csr_matrix(mat[:, num_y_arcs:])
-    h = [constr.rhs for constr in constrs]
-    senses = [constr.sense for constr in constrs]
-    vname = [var.varName for var in dec_vars[num_y_arcs:]]
-    cname = [constr.constrName for constr in constrs]
-
-    return cls(T, W, h, senses, vname, cname, scen)
+    return m

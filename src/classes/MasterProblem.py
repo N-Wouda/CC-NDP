@@ -87,9 +87,9 @@ class MasterProblem:
         assert self.model.status == GRB.OPTIMAL
         return self.model.objVal
 
-    def add_lazy_cut(self, cut: Cut):
+    def add_cut(self, cut: Cut, lazy: bool = True):
         """
-        Adds a lazy cut (constraint) to the model. Gurobi's branch-and-bound
+        Adds a (possibly lazy) new cut to the model. Gurobi's branch-and-bound
         tree (mostly) respects these new constraints, and uses this to guide
         the search in deeper nodes.
         """
@@ -97,7 +97,10 @@ class MasterProblem:
         lhs.addTerms(cut.gamma, self._z[cut.scen])  # type: ignore
         lhs.addTerms(cut.beta, self._y)  # type: ignore
 
-        self.model.cbLazy(lhs >= cut.gamma)
+        if lazy:
+            self.model.cbLazy(lhs >= cut.gamma)
+        else:
+            self.model.addConstr(lhs >= cut.gamma)
 
     def compute_root_relaxation(self) -> RootResult:
         """
@@ -188,7 +191,7 @@ class MasterProblem:
                 if not sub.is_feasible():
                     # The new constraint "cuts off" the current solution y,
                     # ensuring we do not find that one again.
-                    self.add_lazy_cut(sub.cut())
+                    self.add_cut(sub.cut())
 
                     if with_combinatorial_cut:
                         # This cut forces the next solution y to be different
