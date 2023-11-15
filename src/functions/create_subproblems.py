@@ -54,15 +54,11 @@ def _create_subproblem(data: ProblemData, cls: type[SubProblem], scen: int):
             frm = x[arc_idcs_from, commodity_idx].sum()
             to = x[arc_idcs_to, commodity_idx].sum()
 
-            if node == commodity.from_node:  # is the commodity origin
-                name = f"orig{node, commodity_idx}"
-                m.addConstr(frm - to <= commodity.demands[scen], name=name)
-            elif node == commodity.to_node:  # is the commodity destination
-                name = f"dest{node, commodity_idx}"
+            if node == commodity.to_node:  # is the commodity destination
+                name = f"demand{node, commodity_idx}"
                 m.addConstr(to - frm >= commodity.demands[scen], name=name)
-            else:  # regular intermediate node
-                name = f"balance{node, commodity_idx}"
-                m.addConstr(frm == to, name=name)
+            elif node != commodity.from_node:  # regular intermediate node
+                m.addConstr(to == frm, name=f"balance{node, commodity_idx}")
 
     m.update()
 

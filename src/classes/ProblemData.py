@@ -28,6 +28,15 @@ class ProblemData:
     commodities: list[Commodity]
     probabilities: list[float]  # scenario probabilities
 
+    def __post_init__(self):
+        od_pairs = [(c.from_node, c.to_node) for c in self.commodities]
+        if len(od_pairs) != len(set(od_pairs)):
+            msg = "Not all O-D pairs are unique; please aggregate commodities."
+            raise ValueError(msg)
+
+        if any(p <= 0 for p in self.probabilities):
+            raise ValueError("Negative probability.")
+
     @property
     def num_arcs(self) -> int:
         return len(self.arcs)
