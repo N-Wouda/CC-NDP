@@ -1,8 +1,7 @@
 # Single-commodity instances
 
-The 60 instances in this directory are generated from the 72 `r04` and `r07` instances in the `test/` directory.
+The instances instances in this directory are generated from the `r07`, `r08`, and `r09` instances in the `test/` directory.
 Those instances each have ten commodities, which we aggregate here to instances just a single commodity.
-We skip the `r04-9-*` instances because those cannot be made feasible with the simple modification scheme we propose in the next paragraph.
 
 The aggregation process is as follows.
 We introduce two new nodes $s$ and $t$.
