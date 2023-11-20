@@ -68,13 +68,13 @@ def _create_model(data: ProblemData, demands: np.array) -> Model:
         arc_idcs_to = data.arc_indices_to(node)
 
         for commodity_idx, commodity in enumerate(data.commodities):
-            frm = x[arc_idcs_from, commodity_idx].sum()
-            to = x[arc_idcs_to, commodity_idx].sum()
-
             if node == commodity.to_node:  # is the commodity destination
                 name = f"demand{node, commodity_idx}"
-                m.addConstr(to - frm >= demands[commodity_idx], name=name)
+                to = x[arc_idcs_to, commodity_idx].sum()
+                m.addConstr(to >= demands[commodity_idx], name=name)
             elif node != commodity.from_node:  # regular intermediate node
+                frm = x[arc_idcs_from, commodity_idx].sum()
+                to = x[arc_idcs_to, commodity_idx].sum()
                 m.addConstr(to == frm, name=f"balance{node, commodity_idx}")
 
     return m
