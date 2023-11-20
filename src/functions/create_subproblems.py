@@ -72,6 +72,7 @@ def _create_model(data: ProblemData, demands: np.array) -> Model:
                 name = f"demand{node, commodity_idx}"
                 to = x[arc_idcs_to, commodity_idx].sum()
                 m.addConstr(to >= demands[commodity_idx], name=name)
+
             elif node != commodity.from_node:  # regular intermediate node
                 frm = x[arc_idcs_from, commodity_idx].sum()
                 to = x[arc_idcs_to, commodity_idx].sum()
