@@ -1,8 +1,8 @@
 # Instances
 
-These instances are all based on the R instances of Rahmaniani (2017; 2023).
-In particular, they use the topologies of the well-known R instances, but replace the commodity demands by a fixed set of scenarios.
-Each instance is named `r<group>-<fixed>-<correlation>-<# scenarios>.ndp`, where:
+The instances in the `train/` and `test/` directories are all based on the R instances of Rahmaniani (2017; 2023).
+In particular, they use the topologies of the well-known R instances in `base/`, but replace the commodity demands by a fixed set of scenarios from `scenarios/`.
+Each instance in the `test/` directory is named `r<group>-<fixed>-<correlation>-<# scenarios>.ndp`, where:
 
 - `group` indicates the group of the `R` instances, e.g. `r01` to `r30`.
   This repository contains instances from groups `04` through `10`.
