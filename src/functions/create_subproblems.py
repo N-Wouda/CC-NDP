@@ -62,17 +62,18 @@ def _create_model(data: ProblemData, demands: np.array) -> Model:
             name=f"capacity{arc.from_node, arc.to_node}",
         )
 
-    # Balance constraints.
     for node in range(1, data.num_nodes + 1):
         arc_idcs_from = data.arc_indices_from(node)
         arc_idcs_to = data.arc_indices_to(node)
 
         for commodity_idx, commodity in enumerate(data.commodities):
+            # Demand constraint.
             if node == commodity.to_node:  # is the commodity destination
                 name = f"demand{node, commodity_idx}"
                 to = x[arc_idcs_to, commodity_idx].sum()
                 m.addConstr(to >= demands[commodity_idx], name=name)
 
+            # Balance constraint.
             elif node != commodity.from_node:  # regular intermediate node
                 frm = x[arc_idcs_from, commodity_idx].sum()
                 to = x[arc_idcs_to, commodity_idx].sum()
