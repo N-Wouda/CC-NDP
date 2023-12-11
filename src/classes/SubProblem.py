@@ -105,7 +105,7 @@ class SubProblem(ABC):
         arc_capacity = np.array([a.capacity for a in self.data.arcs])
 
         # Residual capacity of the current solution y and flow values x.
-        arc_residual = arc_capacity * self._y - flows.sum(axis=1)
+        arc_residual = (arc_capacity * self._y - flows.sum(axis=1)).tolist()
 
         for commodity_idx, commodity in enumerate(self.data.commodities):
             gamma = commodity.demands[self.scenario]
@@ -116,10 +116,15 @@ class SubProblem(ABC):
             if flows[arcs_out, commodity_idx].sum() >= gamma:
                 continue
 
+            # The current solution does not have sufficient flow of this
+            # commodity out of the origin node. That means the residual graph
+            # has a bottleneck somewhere. We find a minimum cut in the residual
+            # graph and yield a cut that forces the capacity of the edges on
+            # that cut to be at least the commodity's demand in this scenario.
             cut = self.graph.mincut(
                 commodity.from_node,
                 commodity.to_node,
-                arc_residual.tolist(),
+                arc_residual,  # TODO residual graph or actual capacity?
             )
 
             beta = np.zeros_like(arc_capacity)
