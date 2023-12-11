@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 
 
@@ -21,12 +22,27 @@ class Commodity:
     demands: list[float]  # one per scenario
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProblemData:
     num_nodes: int
     arcs: list[Arc]
     commodities: list[Commodity]
     probabilities: list[float]  # scenario probabilities
+
+    def __hash__(self) -> int:
+        """
+        Implements a simple hash function based on the size of the data. This
+        is a bit hacky (nothing prevents us from changing some fields), but
+        since ProblemData is treated as constant everywhere it should be OK.
+        """
+        return hash(
+            (
+                self.num_nodes,
+                self.num_arcs,
+                self.num_commodities,
+                self.num_scenarios,
+            )
+        )
 
     def __post_init__(self):
         od_pairs = [(c.from_node, c.to_node) for c in self.commodities]
@@ -49,6 +65,7 @@ class ProblemData:
     def num_scenarios(self) -> int:
         return len(self.probabilities)
 
+    @cache
     def arc_indices_from(self, node: int) -> list[int]:
         """
         Implements N_i(+) from the paper, for a given node i.
@@ -57,6 +74,7 @@ class ProblemData:
             idx for idx, arc in enumerate(self.arcs) if arc.from_node == node
         ]
 
+    @cache
     def arc_indices_to(self, node: int) -> list[int]:
         """
         Implements N_i(-) from the paper, for a given node i.
@@ -65,16 +83,18 @@ class ProblemData:
             idx for idx, arc in enumerate(self.arcs) if arc.to_node == node
         ]
 
+    @cache
     def origins(self) -> list[int]:
         """
-        TODO
+        Set of all origins.
         """
         origins = {c.from_node for c in self.commodities}
         return sorted(origins)
 
+    @cache
     def destinations(self) -> list[int]:
         """
-        TODO
+        Set of all destinations.
         """
         destinations = {c.to_node for c in self.commodities}
         return sorted(destinations)

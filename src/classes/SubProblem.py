@@ -107,11 +107,13 @@ class SubProblem(ABC):
         # Residual capacity of the current solution y and flow values x.
         arc_residual = arc_capacity * self._y - flows.sum(axis=1)
 
-        for commodity in self.data.commodities:
+        for commodity_idx, commodity in enumerate(self.data.commodities):
+            gamma = commodity.demands[self.scenario]
+
             # First check if this commodity is not already feasible. We can
             # skip this commodity if that's the case.
             arcs_out = self.data.arc_indices_from(commodity.from_node)
-            if flows[arcs_out].sum() >= commodity.demands[self.scenario]:
+            if flows[arcs_out, commodity_idx].sum() >= gamma:
                 continue
 
             cut = self.graph.mincut(
@@ -122,7 +124,6 @@ class SubProblem(ABC):
 
             beta = np.zeros_like(arc_capacity)
             beta[cut.cut] = arc_capacity[cut.cut]
-            gamma = commodity.demands[self.scenario]
 
             yield Cut(beta, gamma, self.scenario)
 
