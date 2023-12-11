@@ -94,12 +94,12 @@ class SubProblem(ABC):
         return NotImplemented
 
     def cutset_inequalities(self) -> Generator[Cut, None, None]:
-        num_arcs = self.data.num_arcs
-        num_comm = self.data.num_commodities
+        n_arcs = self.data.num_arcs
+        n_comm = self.data.num_commodities
 
         # Current flow values.
-        x = self._vars[: num_arcs * num_comm]
-        flows = np.array([var.x for var in x]).reshape(num_arcs, num_comm)
+        x = np.array(self.model.getAttr("X", self._vars[: n_arcs * n_comm]))
+        flows = x.reshape(n_arcs, n_comm)
 
         # Capacity of each arc (if it were constructed).
         arc_capacity = np.array([a.capacity for a in self.data.arcs])
@@ -155,7 +155,7 @@ class SubProblem(ABC):
         return Cut(beta, gamma, self.scenario)
 
     def duals(self) -> np.ndarray:
-        return np.array([constr.pi for constr in self._constrs])
+        return np.array(self.model.getAttr("Pi", self._constrs))
 
     def is_feasible(self) -> bool:
         return np.isclose(self.objective(), 0.0)  # type: ignore
