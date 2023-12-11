@@ -41,6 +41,11 @@ def parse_args():
         action="store_true",
         help="Also derive a combinatorial cut for each infeasible scenario.",
     )
+    decomp.add_argument(
+        "--with_metric_cut",
+        action="store_true",
+        help="Derive stronger metric feasibility cuts.",
+    )
 
     # For the root node/VI utility.
     root = subparsers.add_parser("root", help="Root node help.")
@@ -51,7 +56,11 @@ def parse_args():
 
 def run_decomp(data, master, args) -> Result:
     cls = FORMULATIONS[args.formulation]
-    subs = [cls(data, scen) for scen in range(data.num_scenarios)]
+    subs = [
+        cls(data, scen, args.with_metric_cut)
+        for scen in range(data.num_scenarios)
+    ]
+
     return master.solve_decomposition(subs, args.with_combinatorial_cut)
 
 

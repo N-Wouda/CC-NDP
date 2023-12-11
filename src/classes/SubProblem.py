@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+import igraph as ig
 import numpy as np
 from gurobipy import GRB, Constr, Model, Var
 from scipy.sparse import csr_matrix
@@ -28,12 +29,22 @@ class SubProblem(ABC):
         Problem data instance.
     scen
         Scenario or subproblem number.
+    with_metric_cut
+        Derive stronger metric feasibility cuts? These strengthen the constant
+        in the feasibility cut. Default True.
     """
 
-    def __init__(self, data: ProblemData, scen: int, **params):
+    def __init__(
+        self,
+        data: ProblemData,
+        scen: int,
+        with_metric_cut: bool = True,
+        **params,
+    ):
         logger.info(f"Creating {self.__class__.__name__} #{scen}.")
 
         self.scenario = scen
+        self.with_metric_cut = with_metric_cut
 
         m = _create_model(data, scen)
         mat = m.getA()
@@ -50,6 +61,13 @@ class SubProblem(ABC):
         self.h = np.array(h).reshape((len(h), 1))
 
         self.model = Model(f"Sub #{self.scenario}")
+
+        self.data = data
+        self.graph = ig.Graph(
+            n=data.num_nodes + 1,
+            edges=[(a.from_node, a.to_node) for a in data.arcs],
+            directed=True,
+        )
 
         for param, value in (DEFAULT_SUB_PARAMS | params).items():
             logger.debug(f"Setting {param} = {value}.")
@@ -77,7 +95,27 @@ class SubProblem(ABC):
     def cut(self) -> Cut:
         duals = self.duals()
         beta = duals.transpose() @ self.T
-        gamma = float(duals @ self.h)
+
+        if not self.with_metric_cut:  # then return basic feasibility cut
+            gamma = float(duals @ self.h)
+            return Cut(beta, gamma, self.scenario)
+
+        # Metric inequality of Costa et al. (2009). See the following DOI
+        # for details: https://doi.org/10.1007/s10589-007-9122-0.
+        # TODO check the math
+        pi = -duals[: self.data.num_arcs]
+        pi[pi < 0] = 0  # is only ever negative due to rounding errors
+
+        gamma = 0
+        for commodity in self.data.commodities:
+            edge_idcs = self.graph.get_shortest_path(
+                commodity.from_node,
+                commodity.to_node,
+                weights=pi,
+                output="epath",
+            )
+
+            gamma += commodity.demands[self.scenario] * pi[edge_idcs].sum()
 
         return Cut(beta, gamma, self.scenario)
 
