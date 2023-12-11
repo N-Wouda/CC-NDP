@@ -13,7 +13,6 @@ from src.classes import (
     Result,
     RootResult,
 )
-from src.functions import create_subproblems
 
 
 def parse_args():
@@ -51,7 +50,8 @@ def parse_args():
 
 
 def run_decomp(data, master, args) -> Result:
-    subs = create_subproblems(data, FORMULATIONS[args.formulation])
+    cls = FORMULATIONS[args.formulation]
+    subs = [cls(data, scen) for scen in range(data.num_scenarios)]
     return master.solve_decomposition(subs, args.with_combinatorial_cut)
 
 

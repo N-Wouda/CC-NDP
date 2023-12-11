@@ -6,13 +6,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from gurobipy import GRB, Constr, Model, Var
+from scipy.sparse import csr_matrix
 
 from src.config import DEFAULT_SUB_PARAMS
 
 from .Cut import Cut
 
 if TYPE_CHECKING:
-    from scipy.sparse import csr_matrix
+    from .ProblemData import ProblemData
 
 logger = logging.getLogger(__name__)
 
@@ -20,29 +21,33 @@ logger = logging.getLogger(__name__)
 class SubProblem(ABC):
     """
     Abstract base class for a subproblem formulation.
+
+    Parameters
+    ----------
+    data
+        Problem data instance.
+    scen
+        Scenario or subproblem number.
     """
 
-    def __init__(
-        self,
-        T: csr_matrix,
-        W: csr_matrix,
-        h: list[float] | np.array,
-        senses: list[str] | np.array,
-        vname: list[str],
-        cname: list[str],
-        scen: int,
-        **params,
-    ):
+    def __init__(self, data: ProblemData, scen: int, **params):
         logger.info(f"Creating {self.__class__.__name__} #{scen}.")
 
         self.scenario = scen
 
-        self.T = T
-        self.W = W
+        m = _create_model(data, scen)
+        mat = m.getA()
+        constrs = m.getConstrs()
+        dec_vars = m.getVars()
+
+        self.T = csr_matrix(mat[:, : data.num_arcs])
+        self.W = csr_matrix(mat[:, data.num_arcs :])
+        self.senses = [constr.sense for constr in constrs]
+        self.vname = [var.varName for var in dec_vars[data.num_arcs :]]
+        self.cname = [constr.constrName for constr in constrs]
+
+        h = [constr.rhs for constr in constrs]
         self.h = np.array(h).reshape((len(h), 1))
-        self.senses = np.array(senses)
-        self.vname = vname
-        self.cname = cname
 
         self.model = Model(f"Sub #{self.scenario}")
 
@@ -94,3 +99,39 @@ class SubProblem(ABC):
         rhs[rhs < 0] = 0  # is only ever negative due to rounding errors
 
         self.model.setAttr("RHS", self._constrs, rhs)  # type: ignore
+
+
+def _create_model(data: ProblemData, scen: int) -> Model:
+    demands = np.array([c.demands[scen] for c in data.commodities])
+
+    m = Model()
+    y = m.addMVar((data.num_arcs,), name="y")  # 1st stage
+    x = m.addMVar((data.num_arcs, data.num_commodities), name="x")  # 2nd stage
+
+    # Capacity constraints.
+    for idx, arc in enumerate(data.arcs):
+        # All flow through an arc must not exceed the arc's capacity.
+        m.addConstr(
+            x[idx, :].sum() <= arc.capacity * y[idx],
+            name=f"capacity{arc.from_node, arc.to_node}",
+        )
+
+    for node in range(1, data.num_nodes + 1):
+        arc_idcs_from = data.arc_indices_from(node)
+        arc_idcs_to = data.arc_indices_to(node)
+
+        for commodity_idx, commodity in enumerate(data.commodities):
+            # Demand constraint.
+            if node == commodity.to_node:  # is the commodity destination
+                name = f"demand{node, commodity_idx}"
+                to = x[arc_idcs_to, commodity_idx].sum()
+                m.addConstr(to >= demands[commodity_idx], name=name)
+
+            # Balance constraint.
+            elif node != commodity.from_node:  # regular intermediate node
+                frm = x[arc_idcs_from, commodity_idx].sum()
+                to = x[arc_idcs_to, commodity_idx].sum()
+                m.addConstr(to == frm, name=f"balance{node, commodity_idx}")
+
+    m.update()
+    return m
