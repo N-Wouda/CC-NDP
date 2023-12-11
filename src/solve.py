@@ -6,8 +6,14 @@ from __future__ import annotations
 
 from argparse import ArgumentParser
 
-from src.classes import FORMULATIONS, ProblemData, Result, RootResult
-from src.functions import create_master, create_subproblems
+from src.classes import (
+    FORMULATIONS,
+    MasterProblem,
+    ProblemData,
+    Result,
+    RootResult,
+)
+from src.functions import create_subproblems
 
 
 def parse_args():
@@ -57,7 +63,7 @@ def main():
     args = parse_args()
 
     data = ProblemData.from_file(args.data_loc)
-    master = create_master(data, args.alpha, args.no_vis)
+    master = MasterProblem(data, args.alpha, args.no_vis)
 
     if res := args.func(data, master, args):
         res.to_file(args.res_loc)
