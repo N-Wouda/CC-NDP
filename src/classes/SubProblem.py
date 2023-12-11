@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import igraph as ig
 import numpy as np
@@ -31,14 +31,14 @@ class SubProblem(ABC):
         Scenario or subproblem number.
     with_metric_cut
         Derive stronger metric feasibility cuts? These strengthen the constant
-        in the feasibility cut. Default True.
+        in the feasibility cut.
     """
 
     def __init__(
         self,
         data: ProblemData,
         scen: int,
-        with_metric_cut: bool = True,
+        with_metric_cut: bool,
         **params,
     ):
         logger.info(f"Creating {self.__class__.__name__} #{scen}.")
@@ -63,6 +63,7 @@ class SubProblem(ABC):
         self.model = Model(f"Sub #{self.scenario}")
 
         self.data = data
+        self._y = np.zeros(data.num_arcs)
         self.graph = ig.Graph(
             n=data.num_nodes + 1,
             edges=[(a.from_node, a.to_node) for a in data.arcs],
@@ -92,7 +93,40 @@ class SubProblem(ABC):
     def _set_constrs(self) -> list[Constr]:
         return NotImplemented
 
-    def cut(self) -> Cut:
+    def cutset_inequalities(self) -> Generator[Cut, None, None]:
+        num_arcs = self.data.num_arcs
+        num_comm = self.data.num_commodities
+
+        # Current flow values.
+        x = self._vars[: num_arcs * num_comm]
+        flows = np.array([var.x for var in x]).reshape(num_arcs, num_comm)
+
+        # Capacity of each arc (if it were constructed).
+        arc_capacity = np.array([a.capacity for a in self.data.arcs])
+
+        # Residual capacity of the current solution y and flow values x.
+        arc_residual = arc_capacity * self._y - flows.sum(axis=1)
+
+        for commodity in self.data.commodities:
+            # First check if this commodity is not already feasible. We can
+            # skip this commodity if that's the case.
+            arcs_out = self.data.arc_indices_from(commodity.from_node)
+            if flows[arcs_out].sum() >= commodity.demands[self.scenario]:
+                continue
+
+            cut = self.graph.mincut(
+                commodity.from_node,
+                commodity.to_node,
+                arc_residual.tolist(),
+            )
+
+            beta = np.zeros_like(arc_capacity)
+            beta[cut.cut] = arc_capacity[cut.cut]
+            gamma = commodity.demands[self.scenario]
+
+            yield Cut(beta, gamma, self.scenario)
+
+    def feasibility_cut(self) -> Cut:
         duals = self.duals()
         beta = duals.transpose() @ self.T
 
@@ -133,6 +167,8 @@ class SubProblem(ABC):
         self.model.optimize()
 
     def update_rhs(self, y: np.ndarray):
+        self._y = y
+
         rhs = self.h - self.T @ y[..., np.newaxis]
         rhs[rhs < 0] = 0  # is only ever negative due to rounding errors
 
