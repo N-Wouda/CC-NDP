@@ -29,22 +29,22 @@ class SubProblem(ABC):
         Problem data instance.
     scen
         Scenario or subproblem number.
-    without_metric_cut
+    without_metric_cuts
         Do not derive stronger metric feasibility cuts? These strengthen the
-        constant in the feasibility and cutset inequalities.
+        constant in the feasibility cuts.
     """
 
     def __init__(
         self,
         data: ProblemData,
         scen: int,
-        without_metric_cut: bool,
+        without_metric_cuts: bool,
         **params,
     ):
         logger.info(f"Creating {self.__class__.__name__} #{scen}.")
 
         self.scenario = scen
-        self.without_metric_cut = without_metric_cut
+        self.without_metric_cuts = without_metric_cuts
 
         m = _create_model(data, scen)
         mat = m.getA()
@@ -131,21 +131,33 @@ class SubProblem(ABC):
             beta = np.zeros_like(arc_capacity)
             beta[cut.cut] = arc_capacity[cut.cut]
 
-            if self.without_metric_cut:  # then return basic cutset inequality
-                yield Cut(beta, demand, self.scenario)
-            else:
-                gamma = self._metric_constant()
-                yield Cut(beta, gamma, self.scenario)
+            yield Cut(beta, demand, self.scenario)
 
     def feasibility_cut(self) -> Cut:
         duals = np.array(self.model.getAttr("Pi", self._constrs))
         beta = duals.transpose() @ self.T
 
-        if self.without_metric_cut:  # then return basic feasibility cut
+        if self.without_metric_cuts:  # then return basic feasibility cut
             gamma = float(duals @ self.h)
             return Cut(beta, gamma, self.scenario)
 
-        gamma = self._metric_constant()
+        # Derive a stronger constant (gamma) for use in cuts. This is a metric
+        # inequality. See the paper by Costa et al. (2009) for details:
+        # https://doi.org/10.1007/s10589-007-9122-0.
+        pi = -duals[: self.data.num_arcs]
+        pi[pi < 0] = 0  # is only ever negative due to rounding errors
+
+        gamma = 0
+        for commodity in self.data.commodities:
+            edge_idcs = self.graph.get_shortest_path(
+                commodity.from_node,
+                commodity.to_node,
+                weights=pi,
+                output="epath",
+            )
+
+            gamma += commodity.demands[self.scenario] * pi[edge_idcs].sum()
+
         return Cut(beta, gamma, self.scenario)
 
     def is_feasible(self) -> bool:
@@ -165,29 +177,6 @@ class SubProblem(ABC):
         rhs[rhs < 0] = 0  # is only ever negative due to rounding errors
 
         self.model.setAttr("RHS", self._constrs, rhs)  # type: ignore
-
-    def _metric_constant(self) -> float:
-        """
-        Returns a stronger constant (gamma) for use in cuts. This is a metric
-        inequality. See the paper by Costa et al. (2009) for details:
-        https://doi.org/10.1007/s10589-007-9122-0.
-        """
-        num_arcs = self.data.num_arcs
-        pi = -np.array(self.model.getAttr("Pi", self._constrs[:num_arcs]))
-        pi[pi < 0] = 0  # is only ever negative due to rounding errors
-
-        gamma = 0
-        for commodity in self.data.commodities:
-            edge_idcs = self.graph.get_shortest_path(
-                commodity.from_node,
-                commodity.to_node,
-                weights=pi,
-                output="epath",
-            )
-
-            gamma += commodity.demands[self.scenario] * pi[edge_idcs].sum()
-
-        return gamma
 
 
 def _create_model(data: ProblemData, scen: int) -> Model:

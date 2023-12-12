@@ -44,9 +44,9 @@ def parse_args():
         help="Also derive a combinatorial cut for each infeasible scenario.",
     )
     decomp.add_argument(
-        "--without_metric_cut",
+        "--without_metric_cuts",
         action="store_true",
-        help="Do not derive stronger metric cuts.",
+        help="Do not derive stronger metric feasibility cuts.",
     )
     decomp.add_argument(
         "--without_cutset_inequalities",
@@ -64,7 +64,7 @@ def parse_args():
 def run_decomp(data, master, args) -> Result:
     cls = FORMULATIONS[args.formulation]
     subs = [
-        cls(data, scen, args.without_metric_cut)
+        cls(data, scen, args.without_metric_cuts)
         for scen in range(data.num_scenarios)
     ]
 
