@@ -134,22 +134,19 @@ class SubProblem(ABC):
             if self.without_metric_cut:  # then return basic cutset inequality
                 yield Cut(beta, demand, self.scenario)
             else:
-                gamma = self._metrify_constant()
+                gamma = self._metric_constant()
                 yield Cut(beta, gamma, self.scenario)
 
     def feasibility_cut(self) -> Cut:
-        duals = self.duals()
+        duals = np.array(self.model.getAttr("Pi", self._constrs))
         beta = duals.transpose() @ self.T
 
         if self.without_metric_cut:  # then return basic feasibility cut
             gamma = float(duals @ self.h)
             return Cut(beta, gamma, self.scenario)
 
-        gamma = self._metrify_constant()
+        gamma = self._metric_constant()
         return Cut(beta, gamma, self.scenario)
-
-    def duals(self) -> np.ndarray:
-        return np.array(self.model.getAttr("Pi", self._constrs))
 
     def is_feasible(self) -> bool:
         return np.isclose(self.objective(), 0.0)  # type: ignore
@@ -169,14 +166,14 @@ class SubProblem(ABC):
 
         self.model.setAttr("RHS", self._constrs, rhs)  # type: ignore
 
-    def _metrify_constant(self) -> float:
+    def _metric_constant(self) -> float:
         """
         Returns a stronger constant (gamma) for use in cuts. This is a metric
         inequality. See the paper by Costa et al. (2009) for details:
         https://doi.org/10.1007/s10589-007-9122-0.
         """
-        duals = self.duals()
-        pi = -duals[: self.data.num_arcs]
+        num_arcs = self.data.num_arcs
+        pi = -np.array(self.model.getAttr("Pi", self._constrs[:num_arcs]))
         pi[pi < 0] = 0  # is only ever negative due to rounding errors
 
         gamma = 0

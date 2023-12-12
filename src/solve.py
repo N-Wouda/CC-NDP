@@ -23,7 +23,9 @@ def parse_args():
     parser.add_argument("res_loc", help="File system result location.")
     parser.add_argument("alpha", type=float, help="Infeasibility parameter.")
     parser.add_argument(
-        "--no_vis", action="store_true", help="Do not add valid inequalities."
+        "--no_vis",
+        action="store_true",
+        help="Do not add (initial) valid inequalities.",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
