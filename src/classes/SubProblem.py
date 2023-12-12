@@ -29,22 +29,22 @@ class SubProblem(ABC):
         Problem data instance.
     scen
         Scenario or subproblem number.
-    with_metric_cut
-        Derive stronger metric feasibility cuts? These strengthen the constant
-        in the feasibility cut.
+    without_metric_cut
+        Do not derive stronger metric feasibility cuts? These strengthen the
+        constant in the feasibility and cutset inequalities.
     """
 
     def __init__(
         self,
         data: ProblemData,
         scen: int,
-        with_metric_cut: bool,
+        without_metric_cut: bool,
         **params,
     ):
         logger.info(f"Creating {self.__class__.__name__} #{scen}.")
 
         self.scenario = scen
-        self.with_metric_cut = with_metric_cut
+        self.without_metric_cut = without_metric_cut
 
         m = _create_model(data, scen)
         mat = m.getA()
@@ -94,6 +94,7 @@ class SubProblem(ABC):
         return NotImplemented
 
     def cutset_inequalities(self) -> Generator[Cut, None, None]:
+        # TODO aggregate by origin/destination?
         n_arcs = self.data.num_arcs
         n_comm = self.data.num_commodities
 
@@ -108,12 +109,12 @@ class SubProblem(ABC):
         arc_residual = (arc_capacity * self._y - flows.sum(axis=1)).tolist()
 
         for commodity_idx, commodity in enumerate(self.data.commodities):
-            gamma = commodity.demands[self.scenario]
+            demand = commodity.demands[self.scenario]
 
             # First check if this commodity is not already feasible. We can
             # skip this commodity if that's the case.
             arcs_out = self.data.arc_indices_from(commodity.from_node)
-            if flows[arcs_out, commodity_idx].sum() >= gamma:
+            if flows[arcs_out, commodity_idx].sum() >= demand:
                 continue
 
             # The current solution does not have sufficient flow of this
@@ -130,33 +131,21 @@ class SubProblem(ABC):
             beta = np.zeros_like(arc_capacity)
             beta[cut.cut] = arc_capacity[cut.cut]
 
-            yield Cut(beta, gamma, self.scenario)
+            if self.without_metric_cut:  # then return basic cutset inequality
+                yield Cut(beta, demand, self.scenario)
+            else:
+                gamma = self._metrify_constant()
+                yield Cut(beta, gamma, self.scenario)
 
     def feasibility_cut(self) -> Cut:
         duals = self.duals()
         beta = duals.transpose() @ self.T
 
-        if not self.with_metric_cut:  # then return basic feasibility cut
+        if self.without_metric_cut:  # then return basic feasibility cut
             gamma = float(duals @ self.h)
             return Cut(beta, gamma, self.scenario)
 
-        # Metric inequality of Costa et al. (2009). See the following DOI
-        # for details: https://doi.org/10.1007/s10589-007-9122-0.
-        # TODO check the math
-        pi = -duals[: self.data.num_arcs]
-        pi[pi < 0] = 0  # is only ever negative due to rounding errors
-
-        gamma = 0
-        for commodity in self.data.commodities:
-            edge_idcs = self.graph.get_shortest_path(
-                commodity.from_node,
-                commodity.to_node,
-                weights=pi,
-                output="epath",
-            )
-
-            gamma += commodity.demands[self.scenario] * pi[edge_idcs].sum()
-
+        gamma = self._metrify_constant()
         return Cut(beta, gamma, self.scenario)
 
     def duals(self) -> np.ndarray:
@@ -180,6 +169,29 @@ class SubProblem(ABC):
 
         self.model.setAttr("RHS", self._constrs, rhs)  # type: ignore
 
+    def _metrify_constant(self) -> float:
+        """
+        Returns a stronger constant (gamma) for use in cuts. This is a metric
+        inequality. See the paper by Costa et al. (2009) for details:
+        https://doi.org/10.1007/s10589-007-9122-0.
+        """
+        duals = self.duals()
+        pi = -duals[: self.data.num_arcs]
+        pi[pi < 0] = 0  # is only ever negative due to rounding errors
+
+        gamma = 0
+        for commodity in self.data.commodities:
+            edge_idcs = self.graph.get_shortest_path(
+                commodity.from_node,
+                commodity.to_node,
+                weights=pi,
+                output="epath",
+            )
+
+            gamma += commodity.demands[self.scenario] * pi[edge_idcs].sum()
+
+        return gamma
+
 
 def _create_model(data: ProblemData, scen: int) -> Model:
     demands = np.array([c.demands[scen] for c in data.commodities])
@@ -193,22 +205,24 @@ def _create_model(data: ProblemData, scen: int) -> Model:
         # All flow through an arc must not exceed the arc's capacity.
         m.addConstr(
             x[idx, :].sum() <= arc.capacity * y[idx],
-            name=f"capacity{arc.from_node, arc.to_node}",
+            name=f"capacity{arc}",
         )
 
+    # Balance constraints.
     for node in range(1, data.num_nodes + 1):
         arc_idcs_from = data.arc_indices_from(node)
         arc_idcs_to = data.arc_indices_to(node)
 
         for commodity_idx, commodity in enumerate(data.commodities):
-            # Demand constraint.
             if node == commodity.to_node:  # is the commodity destination
                 name = f"demand{node, commodity_idx}"
                 to = x[arc_idcs_to, commodity_idx].sum()
                 m.addConstr(to >= demands[commodity_idx], name=name)
-
-            # Balance constraint.
-            elif node != commodity.from_node:  # regular intermediate node
+            elif node == commodity.from_node:  # is a commodity origin
+                name = f"supply{node, commodity_idx}"
+                frm = x[arc_idcs_from, commodity_idx].sum()
+                m.addConstr(frm >= demands[commodity_idx], name=name)
+            else:  # regular intermediate node
                 frm = x[arc_idcs_from, commodity_idx].sum()
                 to = x[arc_idcs_to, commodity_idx].sum()
                 m.addConstr(to == frm, name=f"balance{node, commodity_idx}")
