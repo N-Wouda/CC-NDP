@@ -102,7 +102,7 @@ class SubProblem(ABC):
         x = np.array(self.model.getAttr("X", self._vars[: n_arcs * n_comm]))
         flows = x.reshape(n_arcs, n_comm)
 
-        # Capacity of each arc (if it were constructed).
+        # Capacity of each arc (as if it were constructed).
         arc_capacity = np.array([a.capacity for a in self.data.arcs])
 
         # Residual capacity of the current solution y and flow values x.
@@ -125,7 +125,7 @@ class SubProblem(ABC):
             cut = self.graph.mincut(
                 commodity.from_node,
                 commodity.to_node,
-                arc_residual,  # TODO residual graph or actual capacity?
+                arc_residual,
             )
 
             beta = np.zeros_like(arc_capacity)
