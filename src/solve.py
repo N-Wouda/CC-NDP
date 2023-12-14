@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 
 from src.classes import (
     FORMULATIONS,
+    DeterministicEquivalent,
     MasterProblem,
     ProblemData,
     Result,
@@ -58,6 +59,11 @@ def parse_args():
     root = subparsers.add_parser("root", help="Root node help.")
     root.set_defaults(func=run_root_relaxation)
 
+    # For the deterministic equivalent.
+    deq = subparsers.add_parser("deq", help="Deterministic equivalent help.")
+    deq.set_defaults(func=run_deq, formulation="BB")
+    deq.add_argument("--time_limit", type=float, default=float("inf"))
+
     return parser.parse_args()
 
 
@@ -77,6 +83,14 @@ def run_decomp(data, master, args) -> Result:
 
 def run_root_relaxation(data, master, args) -> RootResult:
     return master.compute_root_relaxation()
+
+
+def run_deq(data, master, args) -> Result | None:
+    cls = FORMULATIONS[args.formulation]
+    subs = [cls(data, scen, False) for scen in range(data.num_scenarios)]
+
+    dq = DeterministicEquivalent(master, subs)
+    return dq.solve(time_limit=args.time_limit)
 
 
 def main():

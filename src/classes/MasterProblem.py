@@ -172,35 +172,37 @@ class MasterProblem:
             run_times.append(model.cbGet(GRB.Callback.RUNTIME))
 
             y = np.array(model.cbGetSolution(self._y))
-            z = np.array(model.cbGetSolution(self._z), dtype=int)
+            z = np.array(model.cbGetSolution(self._z))
 
             for z_i, sub in zip(z, subproblems):
-                if z_i == 1:  # scenario is not selected, so is allowed to be
-                    continue  # infeasible in this iteration.
+                if np.isclose(z_i, 1.0):  # allowed to be infeasible
+                    continue
 
                 sub.update_rhs(y)
                 sub.solve()
 
-                if not sub.is_feasible():
-                    if not without_cutset_inequalities:
-                        for cut in sub.cutset_inequalities():
-                            # Derive various cutset inequalities, one for each
-                            # infeasible commodity.
-                            self.add_cut(cut)
+                if sub.is_feasible():  # then there is nothing to do!
+                    continue
 
-                    # The new constraint "cuts off" the current solution y,
-                    # ensuring we do not find that one again.
-                    self.add_cut(sub.feasibility_cut())
+                if not without_cutset_inequalities:
+                    # Derive cutset inequalities violated by the current
+                    # solution (possibly more than one).
+                    for cut in sub.cutset_inequalities():
+                        self.add_cut(cut)
 
-                    if with_combinatorial_cut:
-                        # This cut forces the next solution y to be different
-                        # from the current one, unless this scenario is allowed
-                        # to be infeasible. This works since the current arc
-                        # capacity is infeasible for this scenario, and at
-                        # least one additional arc needs to be opened.
-                        lhs = np.isclose(y, 0) @ self._y
-                        rhs = 1 - self._z[sub.scenario]
-                        model.cbLazy(lhs >= rhs)
+                # The new constraint "cuts off" the current solution y, so we
+                # do not find that one again.
+                self.add_cut(sub.feasibility_cut())
+
+                if with_combinatorial_cut:
+                    # This cut forces the next solution y to be different from
+                    # the current one, unless this scenario is allowed to be
+                    # infeasible. This works since the current arc capacity is
+                    # infeasible for this scenario, and at least one additional
+                    # arc needs to be opened.
+                    lhs = np.isclose(y, 0) @ self._y
+                    rhs = 1 - self._z[sub.scenario]
+                    model.cbLazy(lhs >= rhs)
 
         self.model.optimize(callback)  # type: ignore
 

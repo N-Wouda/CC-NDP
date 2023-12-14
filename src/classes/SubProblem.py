@@ -94,6 +94,7 @@ class SubProblem(ABC):
         return NotImplemented
 
     def cutset_inequalities(self) -> Generator[Cut, None, None]:
+        # TODO think about these
         # TODO aggregate by origin/destination?
         n_arcs = self.data.num_arcs
         n_comm = self.data.num_commodities
@@ -195,23 +196,20 @@ def _create_model(data: ProblemData, scen: int) -> Model:
         )
 
     # Balance constraints.
-    for node in range(1, data.num_nodes + 1):
-        arc_idcs_from = data.arc_indices_from(node)
-        arc_idcs_to = data.arc_indices_to(node)
+    for commodity_idx, commodity in enumerate(data.commodities):
+        for node in range(1, data.num_nodes + 1):
+            frm = x[data.arc_indices_from(node), commodity_idx].sum()
+            to = x[data.arc_indices_to(node), commodity_idx].sum()
 
-        for commodity_idx, commodity in enumerate(data.commodities):
             if node == commodity.to_node:  # is the commodity destination
                 name = f"demand{node, commodity_idx}"
-                to = x[arc_idcs_to, commodity_idx].sum()
                 m.addConstr(to >= demands[commodity_idx], name=name)
             elif node == commodity.from_node:  # is a commodity origin
                 name = f"supply{node, commodity_idx}"
-                frm = x[arc_idcs_from, commodity_idx].sum()
                 m.addConstr(frm >= demands[commodity_idx], name=name)
             else:  # regular intermediate node
-                frm = x[arc_idcs_from, commodity_idx].sum()
-                to = x[arc_idcs_to, commodity_idx].sum()
-                m.addConstr(to == frm, name=f"balance{node, commodity_idx}")
+                name = f"balance{node, commodity_idx}"
+                m.addConstr(to == frm, name=name)
 
     m.update()
     return m
