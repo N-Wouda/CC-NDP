@@ -1,8 +1,8 @@
 # Instances
 
-The instances in the `train/` and `test/` directories are all based on the R instances of Rahmaniani (2017; 2023).
+The instances in this directory are all based on the R instances of Rahmaniani (2017; 2023).
 In particular, they use the topologies of the well-known R instances in `base/`, but replace the commodity demands by a fixed set of scenarios from `scenarios/`.
-Each instance in the `test/` directory is named `r<group>-<fixed>-<correlation>-<# scenarios>.ndp`, where:
+Each instance in this directory is named `r<group>-<fixed>-<correlation>-<# scenarios>.ndp`, where:
 
 - `group` indicates the group of the `R` instances, e.g. `r01` to `r30`.
   This repository contains instances from groups `04` through `10`.
@@ -19,6 +19,8 @@ The first line specifies (in order): the number of nodes, arcs, commodities, and
 The next `num_arcs` lines specify (in order) for each arc: the origin node, the destination node, the variable cost (unused), the arc capacity, and the fixed cost.
 The next `num_commodities` lines specify (in order) for each commodity: the origin node, the destination node.
 The next `num_scenarios` lines specify (in order) for each scenario: the probability, the demands of each commodity.
+
+See the `make_files.py` script for all details.
 
 ## References
 
