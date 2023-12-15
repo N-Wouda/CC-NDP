@@ -89,8 +89,8 @@ def run_deq(data, master, args) -> Result | None:
     cls = FORMULATIONS[args.formulation]
     subs = [cls(data, scen, False) for scen in range(data.num_scenarios)]
 
-    dq = DeterministicEquivalent(master, subs)
-    return dq.solve(time_limit=args.time_limit)
+    deq = DeterministicEquivalent(master, subs)
+    return deq.solve(time_limit=args.time_limit)
 
 
 def main():
