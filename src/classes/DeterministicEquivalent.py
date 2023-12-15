@@ -44,7 +44,7 @@ class DeterministicEquivalent:
 
         if self.model.status == GRB.TIME_LIMIT:
             logger.warning("Solver ran out of time - solution is not optimal.")
-            logger.info(f"Gap: {100 * self.model.MIPGap:.2f}%")
+            logger.info(f"Gap: {100 * self.model.MIPGap:.2f}%.")
 
         logger.info(f"Solving took {self.model.runTime:.2f}s.")
 

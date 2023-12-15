@@ -62,7 +62,12 @@ def parse_args():
     # For the deterministic equivalent.
     deq = subparsers.add_parser("deq", help="Deterministic equivalent help.")
     deq.set_defaults(func=run_deq, formulation="BB")
-    deq.add_argument("--time_limit", type=float, default=float("inf"))
+    deq.add_argument(
+        "--time_limit",
+        type=float,
+        default=float("inf"),
+        help="Time limit (in seconds).",
+    )
 
     return parser.parse_args()
 
