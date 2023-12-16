@@ -95,6 +95,8 @@ class SubProblem(ABC):
 
     def cutset_inequalities(self) -> Generator[Cut, None, None]:
         # TODO think about these
+        # TODO fix this to make it work with the removed flows (see model
+        #   creation)
         # TODO aggregate by origin/destination?
         n_arcs = self.data.num_arcs
         n_comm = self.data.num_commodities
@@ -203,13 +205,19 @@ def _create_model(data: ProblemData, scen: int) -> Model:
 
             if node == commodity.to_node:  # is the commodity destination
                 name = f"demand{node, commodity_idx}"
-                m.addConstr(to - frm >= demands[commodity_idx], name=name)
+                m.addConstr(to >= demands[commodity_idx], name=name)
             elif node == commodity.from_node:  # is the commodity origin
                 name = f"supply{node, commodity_idx}"
-                m.addConstr(frm - to >= demands[commodity_idx], name=name)
+                m.addConstr(frm >= demands[commodity_idx], name=name)
             else:  # is a regular intermediate node
                 name = f"balance{node, commodity_idx}"
                 m.addConstr(to == frm, name=name)
+
+        # Remove superfluous flows: those out of the destination, or into the
+        # origin. These must be set to zero, and can thus be removed from the
+        # model.
+        m.remove(x[data.arc_indices_to(commodity.from_node), commodity_idx])
+        m.remove(x[data.arc_indices_from(commodity.to_node), commodity_idx])
 
     m.update()
     return m
