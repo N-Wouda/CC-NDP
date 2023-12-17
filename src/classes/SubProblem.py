@@ -206,10 +206,7 @@ def _create_model(data: ProblemData, scen: int) -> Model:
             if node == commodity.to_node:  # is the commodity destination
                 name = f"demand{node, commodity_idx}"
                 m.addConstr(to >= demands[commodity_idx], name=name)
-            elif node == commodity.from_node:  # is the commodity origin
-                name = f"supply{node, commodity_idx}"
-                m.addConstr(frm >= demands[commodity_idx], name=name)
-            else:  # is a regular intermediate node
+            elif node != commodity.from_node:  # is a regular intermediate node
                 name = f"balance{node, commodity_idx}"
                 m.addConstr(to == frm, name=name)
 
