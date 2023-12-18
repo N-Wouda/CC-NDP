@@ -34,7 +34,7 @@ def main():
         group, typ = ndp.stem.split(".")
 
         for scen in glob.glob(f"instances/scenarios/{group}-0-*"):
-            _, corr, size = scen.split("-")
+            _, _, size = scen.split("-")
 
             if size == "1000":
                 scens = [(prob, demands) for prob, demands in parse_scen(scen)]
@@ -44,16 +44,15 @@ def main():
                 make_problem_data(data, scens_128)
                 experiments.append(
                     dict(
-                        name=f"{group}-{typ}-{corr}-128",
+                        name=f"{group}-{typ}-128",
                         group=group,
-                        correlation=corr,
                         num_nodes=data.num_nodes,
                         num_arcs=data.num_arcs,
                         num_commodities=data.num_commodities,
                         num_scenarios=data.num_scenarios,
                     )
                 )
-                data.to_file(f"instances/{group}-{typ}-{corr}-128.ndp")
+                data.to_file(f"instances/{group}-{typ}-128.ndp")
 
                 data = ProblemData.from_file(ndp)
                 scens_256 = [
@@ -62,16 +61,15 @@ def main():
                 make_problem_data(data, scens_256)
                 experiments.append(
                     dict(
-                        name=f"{group}-{typ}-{corr}-256",
+                        name=f"{group}-{typ}-256",
                         group=group,
-                        correlation=corr,
                         num_nodes=data.num_nodes,
                         num_arcs=data.num_arcs,
                         num_commodities=data.num_commodities,
                         num_scenarios=data.num_scenarios,
                     )
                 )
-                data.to_file(f"instances/{group}-{typ}-{corr}-256.ndp")
+                data.to_file(f"instances/{group}-{typ}-256.ndp")
 
                 data = ProblemData.from_file(ndp)
                 scens_512 = [
@@ -80,105 +78,30 @@ def main():
                 make_problem_data(data, scens_512)
                 experiments.append(
                     dict(
-                        name=f"{group}-{typ}-{corr}-512",
+                        name=f"{group}-{typ}-512",
                         group=group,
-                        correlation=corr,
                         num_nodes=data.num_nodes,
                         num_arcs=data.num_arcs,
                         num_commodities=data.num_commodities,
                         num_scenarios=data.num_scenarios,
                     )
                 )
-                data.to_file(f"instances/{group}-{typ}-{corr}-512.ndp")
+                data.to_file(f"instances/{group}-{typ}-512.ndp")
             else:
                 data = ProblemData.from_file(ndp)
                 make_problem_data(data, parse_scen(scen))
 
                 experiments.append(
                     dict(
-                        name=f"{group}-{typ}-{corr}-{size}",
+                        name=f"{group}-{typ}-{size}",
                         group=group,
-                        correlation=corr,
                         num_nodes=data.num_nodes,
                         num_arcs=data.num_arcs,
                         num_commodities=data.num_commodities,
                         num_scenarios=data.num_scenarios,
                     )
                 )
-                data.to_file(f"instances/{group}-{typ}-{corr}-{size}.ndp")
-
-        for scen in glob.glob(f"instances/scenarios/{group}-0.2-*"):
-            _, corr, size = scen.split("-")
-
-            if size == "1000":
-                scens = [(prob, demands) for prob, demands in parse_scen(scen)]
-
-                data = ProblemData.from_file(ndp)
-                scens_128 = [(1 / 128, demands) for _, demands in scens[:128]]
-                make_problem_data(data, scens_128)
-                experiments.append(
-                    dict(
-                        name=f"{group}-{typ}-{corr}-128",
-                        group=group,
-                        correlation=corr,
-                        num_nodes=data.num_nodes,
-                        num_arcs=data.num_arcs,
-                        num_commodities=data.num_commodities,
-                        num_scenarios=data.num_scenarios,
-                    )
-                )
-                data.to_file(f"instances/{group}-{typ}-{corr}-128.ndp")
-
-                data = ProblemData.from_file(ndp)
-                scens_256 = [
-                    (1 / 256, demands) for _, demands in scens[128:384]
-                ]
-                make_problem_data(data, scens_256)
-                experiments.append(
-                    dict(
-                        name=f"{group}-{typ}-{corr}-256",
-                        group=group,
-                        correlation=corr,
-                        num_nodes=data.num_nodes,
-                        num_arcs=data.num_arcs,
-                        num_commodities=data.num_commodities,
-                        num_scenarios=data.num_scenarios,
-                    )
-                )
-                data.to_file(f"instances/{group}-{typ}-{corr}-256.ndp")
-
-                data = ProblemData.from_file(ndp)
-                scens_512 = [
-                    (1 / 512, demands) for _, demands in scens[384:896]
-                ]
-                make_problem_data(data, scens_512)
-                experiments.append(
-                    dict(
-                        name=f"{group}-{typ}-{corr}-512",
-                        group=group,
-                        correlation=corr,
-                        num_nodes=data.num_nodes,
-                        num_arcs=data.num_arcs,
-                        num_commodities=data.num_commodities,
-                        num_scenarios=data.num_scenarios,
-                    )
-                )
-                data.to_file(f"instances/{group}-{typ}-{corr}-512.ndp")
-            else:
-                data = ProblemData.from_file(ndp)
-                make_problem_data(data, parse_scen(scen))
-                experiments.append(
-                    dict(
-                        name=f"{group}-{typ}-{corr}-{size}",
-                        group=group,
-                        correlation=corr,
-                        num_nodes=data.num_nodes,
-                        num_arcs=data.num_arcs,
-                        num_commodities=data.num_commodities,
-                        num_scenarios=data.num_scenarios,
-                    )
-                )
-                data.to_file(f"instances/{group}-{typ}-{corr}-{size}.ndp")
+                data.to_file(f"instances/{group}-{typ}-{size}.ndp")
 
     with open("instances/instances.csv", "w", newline="") as fh:
         writer = csv.DictWriter(fh, list(experiments[0].keys()))
