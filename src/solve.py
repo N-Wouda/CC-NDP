@@ -49,11 +49,6 @@ def parse_args():
         action="store_true",
         help="Do not derive stronger metric feasibility cuts.",
     )
-    decomp.add_argument(
-        "--without_cutset_inequalities",
-        action="store_true",
-        help="Do not separate cutset inequalities.",
-    )
 
     # For the root node/VI utility.
     root = subparsers.add_parser("root", help="Root node help.")
@@ -82,7 +77,6 @@ def run_decomp(data, master, args) -> Result:
     return master.solve_decomposition(
         subs,
         args.with_combinatorial_cut,
-        args.without_cutset_inequalities,
     )
 
 

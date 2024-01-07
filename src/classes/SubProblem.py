@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
 
 import igraph as ig
 import numpy as np
@@ -92,49 +92,6 @@ class SubProblem(ABC):
     @abstractmethod
     def _set_constrs(self) -> list[Constr]:
         return NotImplemented
-
-    def cutset_inequalities(self) -> Generator[Cut, None, None]:
-        # TODO think about these
-        # TODO fix this to make it work with the removed flows (see model
-        #   creation)
-        # TODO aggregate by origin/destination?
-        n_arcs = self.data.num_arcs
-        n_comm = self.data.num_commodities
-
-        # Current flow values.
-        x = np.array(self.model.getAttr("X", self._vars[: n_arcs * n_comm]))
-        flows = x.reshape(n_arcs, n_comm)
-
-        # Capacity of each arc (as if it were constructed).
-        arc_capacity = np.array([a.capacity for a in self.data.arcs])
-
-        # Residual capacity of the current solution y and flow values x.
-        arc_residual = (arc_capacity * self._y - flows.sum(axis=1)).tolist()
-
-        for commodity_idx, commodity in enumerate(self.data.commodities):
-            demand = commodity.demands[self.scenario]
-
-            # First check if this commodity is not already feasible. We can
-            # skip this commodity if that's the case.
-            arcs_out = self.data.arc_indices_from(commodity.from_node)
-            if flows[arcs_out, commodity_idx].sum() >= demand:
-                continue
-
-            # The current solution does not have sufficient flow of this
-            # commodity out of the origin node. That means the residual graph
-            # has a bottleneck somewhere. We find a minimum cut in the residual
-            # graph and yield a cut that forces the capacity of the edges on
-            # that cut to be at least the commodity's demand in this scenario.
-            cut = self.graph.mincut(
-                commodity.from_node,
-                commodity.to_node,
-                arc_residual,
-            )
-
-            beta = np.zeros_like(arc_capacity)
-            beta[cut.cut] = arc_capacity[cut.cut]
-
-            yield Cut(beta, demand, self.scenario)
 
     def feasibility_cut(self) -> Cut:
         duals = np.array(self.model.getAttr("Pi", self._constrs))

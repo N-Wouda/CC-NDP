@@ -122,7 +122,6 @@ class MasterProblem:
         self,
         subproblems: list[SubProblem],
         with_combinatorial_cut: bool,
-        without_cutset_inequalities: bool,
     ) -> Result:
         """
         Solves the master/subproblem decomposition with the given subproblems.
@@ -144,9 +143,6 @@ class MasterProblem:
             each infeasible scenario. Such cuts force the first-stage solution
             to chance by opening at least one additional arc if the scenario
             needs to be made feasible.
-        without_cutset_inequalities
-            Do not derive strong cutset inequalities from infeasible
-            subproblems.
 
         Returns
         -------
@@ -183,12 +179,6 @@ class MasterProblem:
 
                 if sub.is_feasible():  # then there is nothing to do!
                     continue
-
-                if not without_cutset_inequalities:
-                    # Derive cutset inequalities violated by the current
-                    # solution (possibly more than one).
-                    for cut in sub.cutset_inequalities():
-                        self.add_cut(cut)
 
                 # The new constraint "cuts off" the current solution y, so we
                 # do not find that one again.
