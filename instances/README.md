@@ -2,14 +2,12 @@
 
 The instances in this directory are all based on the R instances of Rahmaniani (2017; 2023).
 In particular, they use the topologies of the well-known R instances in `base/`, but replace the commodity demands by a fixed set of scenarios from `scenarios/`.
-Each instance in this directory is named `r<group>-<fixed>-<correlation>-<# scenarios>.ndp`, where:
+Each instance in this directory is named `r<group>-<fixed>-<# scenarios>.ndp`, where:
 
 - `group` indicates the group of the `R` instances, e.g. `r01` to `r30`.
   This repository contains instances from groups `04` through `10`.
 - `fixed` indicates the importance of the fixed (design) costs w.r.t. the variable (flow) costs.
-  We use the groups `3`, `6`, and `9`, where the fixed design costs are maximal (since we care about design costs, not variable costs).
-- `correlation` indicates the correlation between various demand realisations.
-  We use `0` and `0.2`, which imply no correlation (`0`) and weakly correlated demands (`0.2`).
+  Values here range from `1` to `9` (inclusive).
 - `# scenarios`, the number of different demand scenarios.
   We use values of `16`, `32`, `64`, `128`, `256`, and `512` scenarios.
   The values up to and including `64` are taken directly from Rahmaniani (2023), the higher values are taken from the 1000 scenario instances there: our `128` uses the first 128 scenarios, our `256` the scenarios [128, 384), and our `512` the scenarios [384, 896).
