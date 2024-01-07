@@ -29,7 +29,7 @@ def make_problem_data(data: ProblemData, scenarios):
 def main():
     experiments = []
 
-    for ndp in glob.glob("instances/base/*.ndp"):
+    for ndp in glob.glob("instances/base/*.dow"):
         ndp = pathlib.Path(ndp)
         group, typ = ndp.stem.split(".")
 
@@ -46,6 +46,7 @@ def main():
                     dict(
                         name=f"{group}-{typ}-128",
                         group=group,
+                        ratio=typ,
                         num_nodes=data.num_nodes,
                         num_arcs=data.num_arcs,
                         num_commodities=data.num_commodities,
@@ -63,6 +64,7 @@ def main():
                     dict(
                         name=f"{group}-{typ}-256",
                         group=group,
+                        ratio=typ,
                         num_nodes=data.num_nodes,
                         num_arcs=data.num_arcs,
                         num_commodities=data.num_commodities,
@@ -80,6 +82,7 @@ def main():
                     dict(
                         name=f"{group}-{typ}-512",
                         group=group,
+                        ratio=typ,
                         num_nodes=data.num_nodes,
                         num_arcs=data.num_arcs,
                         num_commodities=data.num_commodities,
@@ -95,6 +98,7 @@ def main():
                     dict(
                         name=f"{group}-{typ}-{size}",
                         group=group,
+                        ratio=typ,
                         num_nodes=data.num_nodes,
                         num_arcs=data.num_arcs,
                         num_commodities=data.num_commodities,

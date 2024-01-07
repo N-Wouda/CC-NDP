@@ -107,7 +107,11 @@ class ProblemData:
         where = Path(where)
 
         with open(where) as fh:
-            lines = (line.strip() for line in fh.readlines())
+            lines = (
+                line.strip()
+                for line in fh.readlines()
+                if "MULTIGEN" not in line
+            )
 
         # First line specifies number of nodes, arcs, commodities, scenarios.
         num_nodes, num_arcs, num_comm, num_scen = map(int, next(lines).split())
