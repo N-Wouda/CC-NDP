@@ -114,7 +114,14 @@ class ProblemData:
             )
 
         # First line specifies number of nodes, arcs, commodities, scenarios.
-        num_nodes, num_arcs, num_comm, num_scen = map(int, next(lines).split())
+        items = list(map(int, next(lines).split()))
+        if len(items) == 4:
+            num_nodes, num_arcs, num_comm, num_scen = items
+        else:
+            # Then we are parsing a raw data file that does not (yet) contain
+            # scenario data.
+            num_nodes, num_arcs, num_comm = items
+            num_scen = 0
 
         # Next num_arcs lines specify arc data.
         arcs: list[Arc] = []
