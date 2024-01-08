@@ -19,6 +19,15 @@ class Result:
     run_times: list[float]  # wall-time (seconds) per iteration
     is_optimal: bool = True  # is the solution optimal?
 
+    def __post_init__(self):
+        # This reduces the resulting file size considerably, without impacting
+        # the actual results too much (two decimal precision is plenty for our
+        # uses). The decisions and decision costs already have one or two
+        # decimal precision, so we do not need to touch those here.
+        self.bounds = [round(bnd, 2) for bnd in self.bounds]
+        self.objectives = [round(obj, 2) for obj in self.objectives]
+        self.run_times = [round(run_time, 2) for run_time in self.run_times]
+
     @property
     def lower_bound(self) -> float:
         return self.bounds[-1]
