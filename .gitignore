@@ -137,6 +137,7 @@ data/
 
 # Logs/generated files etc.
 out/
+slurm/
 
 # PDF-ified notebooks
 notebooks/*.pdf
