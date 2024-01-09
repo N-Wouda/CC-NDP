@@ -11,7 +11,7 @@ from src.classes.ProblemData import ProblemData
 def main():
     experiments = []
 
-    for loc in glob.glob("instances/r0[47]*.ndp"):
+    for loc in glob.glob("instances/*.ndp"):
         data = ProblemData.from_file(loc)
         data = ProblemData(
             data.num_nodes,

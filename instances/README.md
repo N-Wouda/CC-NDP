@@ -18,8 +18,6 @@ The next `num_arcs` lines specify (in order) for each arc: the origin node, the 
 The next `num_commodities` lines specify (in order) for each commodity: the origin node, the destination node.
 The next `num_scenarios` lines specify (in order) for each scenario: the probability, the demands of each commodity.
 
-See the `make_files.py` script for all details.
-
 ## References
 
 Rahmaniani, Ragheb, Teodor Gabriel Crainic, Michel Gendreau, and Walter Rei. 
