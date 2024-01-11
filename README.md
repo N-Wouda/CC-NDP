@@ -25,4 +25,23 @@ poetry run <script>
 > To solve many instances in parallel (e.g., on a computer cluster), make sure to turn off Gurobi's output by setting `OutputFlag 0` in the `gurobi.env` file.
 > Also turn off logging by setting the root logging level to `WARNING` in `logging.toml`.
 
-TODO
+Suppose we want to solve the `r04-7-16` instance using FlowMIS and $\alpha = 0.1$, and write the result to the `out.json` file.
+In the project root, one would then run the following command:
+```
+poetry run solve instances/r04-7-16.ndp out.json 0.1 decomp FlowMIS
+```
+The other formulations may be specified in the place of FlowMIS as BB, MIS, and SNC.
+One may optionally specify the `--with_combinatorial_cut` and `--without_metric_cuts` at the end of the command, to tell the decomposition to also use (or not use) those particular cuts.
+The default is to use metric cut strengthening, but not to use combinatorial cuts.
+
+Additionally, a deterministic equivalent solver is available and may be used as follows (here, with a time limit of 120 seconds):
+```
+poetry run solve instances/r04-7-16.ndp out.json 0.1 deq --time_limit 120
+```
+The deterministic equivalent solver is useful for verifying correct outputs.
+
+Both the decomposition routine and deterministic equivalent use the valid inequalities by default.
+One can disable these by passing `--no_vis` after the $\alpha$ level, as follows:
+```
+poetry run solve instances/r04-7-16.ndp out.json 0.1 --no_vis decomp FlowMIS
+```
