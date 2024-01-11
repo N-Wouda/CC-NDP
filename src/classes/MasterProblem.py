@@ -8,11 +8,10 @@ from gurobipy import GRB, LinExpr, MVar, Model
 
 from src.config import DEFAULT_MASTER_PARAMS
 
+from .Cut import Cut
 from .Result import Result
-from .RootResult import RootResult
 
 if TYPE_CHECKING:
-    from .Cut import Cut
     from .ProblemData import ProblemData
     from .SubProblem import SubProblem
 
@@ -91,33 +90,6 @@ class MasterProblem:
         else:
             self.model.addConstr(lhs >= cut.gamma)
 
-    def compute_root_relaxation(self) -> RootResult:
-        """
-        Computes the root relaxations, that is, the value of the LP or MIP
-        solution at the root node.
-        """
-        logger.info("Computing LP root relaxation.")
-
-        self.model.reset()
-        relax = self.model.relax()
-        relax.optimize()
-
-        assert relax.status == GRB.OPTIMAL
-
-        logger.info("Computing MIP root relaxation.")
-
-        self.model.reset()
-        self.model.optimize()
-
-        assert self.model.status == GRB.OPTIMAL
-
-        return RootResult(
-            relax.runTime,
-            relax.objVal,
-            self.model.runTime,
-            self.model.objVal,
-        )
-
     def solve_decomposition(
         self,
         subproblems: list[SubProblem],
@@ -190,9 +162,8 @@ class MasterProblem:
                     # infeasible. This works since the current arc capacity is
                     # infeasible for this scenario, and at least one additional
                     # arc needs to be opened.
-                    lhs = np.isclose(y, 0) @ self._y
-                    rhs = 1 - self._z[sub.scenario]
-                    model.cbLazy(lhs >= rhs)
+                    combinatorial_cut = Cut(np.isclose(y, 0), 1, sub.scenario)
+                    self.add_cut(combinatorial_cut)
 
         self.model.optimize(callback)  # type: ignore
 

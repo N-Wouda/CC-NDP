@@ -12,7 +12,6 @@ from src.classes import (
     MasterProblem,
     ProblemData,
     Result,
-    RootResult,
 )
 
 
@@ -50,10 +49,6 @@ def parse_args():
         help="Do not derive stronger metric feasibility cuts.",
     )
 
-    # For the root node/VI utility.
-    root = subparsers.add_parser("root", help="Root node help.")
-    root.set_defaults(func=run_root_relaxation)
-
     # For the deterministic equivalent.
     deq = subparsers.add_parser("deq", help="Deterministic equivalent help.")
     deq.set_defaults(func=run_deq, formulation="BB")
@@ -78,10 +73,6 @@ def run_decomp(data, master, args) -> Result:
         subs,
         args.with_combinatorial_cut,
     )
-
-
-def run_root_relaxation(data, master, args) -> RootResult:
-    return master.compute_root_relaxation()
 
 
 def run_deq(data, master, args) -> Result | None:

@@ -51,7 +51,7 @@ class ProblemData:
             raise ValueError(msg)
 
         if any(p <= 0 for p in self.probabilities):
-            raise ValueError("Negative probability.")
+            raise ValueError("Non-positive probability.")
 
     @property
     def num_arcs(self) -> int:
@@ -68,7 +68,7 @@ class ProblemData:
     @cache
     def arc_indices_from(self, node: int) -> list[int]:
         """
-        Implements N_i(+) from the paper, for a given node i.
+        Indices of all arcs *starting* at the given node.
         """
         return [
             idx for idx, arc in enumerate(self.arcs) if arc.from_node == node
@@ -77,7 +77,7 @@ class ProblemData:
     @cache
     def arc_indices_to(self, node: int) -> list[int]:
         """
-        Implements N_i(-) from the paper, for a given node i.
+        Indices of all arcs *ending* at the given node.
         """
         return [
             idx for idx, arc in enumerate(self.arcs) if arc.to_node == node
