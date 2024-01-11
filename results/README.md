@@ -13,3 +13,5 @@ The subdirectories are as follows:
 - `everything`: the results in this subdirectory were generated using all enhancements active, that is, using the VI's and the metric cuts;
 - `no-metric`: the results in this subdirectory were generated using VI's, but not the metric cuts;
 - `no-metric-no-vis`: the results in this subdirecotry were generated without the VI's and metric cuts. These results correspond to the pure, simple Benders' routine without any enhancements.
+- `single-commodity`: the results in this directory are for the single-commodity instances in `instances/single-commodity`.
+`
