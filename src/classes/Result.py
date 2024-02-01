@@ -38,7 +38,10 @@ class Result:
 
     @property
     def objective(self) -> float:
-        return self.objectives[-1]
+        return sum(
+            self.decision_costs[key] * self.decisions[key]
+            for key in self.decisions
+        )
 
     @property
     def run_time(self) -> float:

@@ -10,6 +10,7 @@ from gurobipy import GRB, Constr, Model, Var
 from scipy.sparse import csr_matrix
 
 from src.config import DEFAULT_SUB_PARAMS
+from src.functions import create_sub_model
 
 from .Cut import Cut
 
@@ -46,10 +47,12 @@ class SubProblem(ABC):
         self.scenario = scen
         self.without_metric_cuts = without_metric_cuts
 
-        m = _create_model(data, scen)
-        mat = m.getA()
-        constrs = m.getConstrs()
-        dec_vars = m.getVars()
+        demands = np.array([c.demands[scen] for c in data.commodities])
+        model = create_sub_model(data, demands)
+
+        mat = model.getA()
+        constrs = model.getConstrs()
+        dec_vars = model.getVars()
 
         self.T = csr_matrix(mat[:, : data.num_arcs])
         self.W = csr_matrix(mat[:, data.num_arcs :])
@@ -137,41 +140,3 @@ class SubProblem(ABC):
         rhs[rhs < 0] = 0  # is only ever negative due to rounding errors
 
         self.model.setAttr("RHS", self._constrs, rhs)  # type: ignore
-
-
-def _create_model(data: ProblemData, scen: int) -> Model:
-    demands = np.array([c.demands[scen] for c in data.commodities])
-
-    m = Model()
-    y = m.addMVar((data.num_arcs,), name="y")  # 1st stage
-    x = m.addMVar((data.num_arcs, data.num_commodities), name="x")  # 2nd stage
-
-    # Capacity constraints.
-    for idx, arc in enumerate(data.arcs):
-        # All flow through an arc must not exceed the arc's capacity.
-        m.addConstr(
-            x[idx, :].sum() <= arc.capacity * y[idx],
-            name=f"capacity{arc}",
-        )
-
-    # Balance constraints.
-    for commodity_idx, commodity in enumerate(data.commodities):
-        for node in range(1, data.num_nodes + 1):
-            frm = x[data.arc_indices_from(node), commodity_idx].sum()
-            to = x[data.arc_indices_to(node), commodity_idx].sum()
-
-            if node == commodity.to_node:  # is the commodity destination
-                name = f"demand{node, commodity_idx}"
-                m.addConstr(to >= demands[commodity_idx], name=name)
-            elif node != commodity.from_node:  # is a regular intermediate node
-                name = f"balance{node, commodity_idx}"
-                m.addConstr(to == frm, name=name)
-
-        # Remove superfluous flows: those out of the destination, or into the
-        # origin. These must be set to zero, and can thus be removed from the
-        # model.
-        m.remove(x[data.arc_indices_to(commodity.from_node), commodity_idx])
-        m.remove(x[data.arc_indices_from(commodity.to_node), commodity_idx])
-
-    m.update()
-    return m

@@ -4,9 +4,10 @@ import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
-from gurobipy import GRB, LinExpr, MVar, Model
+from gurobipy import GRB, LinExpr, Model
 
 from src.config import DEFAULT_MASTER_PARAMS
+from src.functions import create_master_model
 
 from .Cut import Cut
 from .Result import Result
@@ -42,22 +43,36 @@ class MasterProblem:
         If True, VI's are not added; else they are.
     params
         Any keyword arguments are passed to the Gurobi model as parameters.
+    without_master_scenario
+        Do not create a single scenario based on the marginal demand data.
+        Such a scenario can strengthen the master problem substantially.
+        The single scenario also includes relevant strong inequalities.
     """
 
     def __init__(
-        self, data: ProblemData, alpha: float, no_vis: bool, **params
+        self,
+        data: ProblemData,
+        alpha: float,
+        no_vis: bool,
+        without_master_scenario: bool,
+        **params,
     ):
         logger.info("Creating master problem.")
 
-        self.model = _create_model(data, alpha, no_vis)
+        self.model = create_master_model(
+            data,
+            alpha,
+            no_vis,
+            without_master_scenario,
+        )
 
         for param, value in (DEFAULT_MASTER_PARAMS | params).items():
             logger.debug(f"Setting {param} = {value}.")
             self.model.setParam(param, value)
 
         dec_vars = self.model.getVars()
-        self._y = dec_vars[: -data.num_scenarios]
-        self._z = dec_vars[-data.num_scenarios :]
+        self._y = dec_vars[: data.num_arcs]
+        self._z = dec_vars[data.num_arcs : data.num_arcs + data.num_scenarios]
 
         self.model.update()
 
@@ -174,66 +189,3 @@ class MasterProblem:
             incumbent_objs,
             np.diff(run_times, prepend=0).tolist(),  # type: ignore
         )
-
-
-def _create_model(data: ProblemData, alpha: float, no_vis: bool) -> Model:
-    m = Model()
-
-    # Construction decision variables, with costs and variable types as given
-    # by the problem instance.
-    y = m.addMVar(
-        (data.num_arcs,),
-        obj=[arc.fixed_cost for arc in data.arcs],  # type: ignore
-        vtype="B",  # type: ignore
-        name=[str(arc) for arc in data.arcs],
-    )
-
-    # The z variables decide which of the scenarios must be made feasible. If
-    # z_i == 1, scenario i can be infeasible; if z_i == 0, it must be feasible.
-    z = m.addMVar((data.num_scenarios,), vtype="B", name="z")
-
-    # At most alpha percent of the scenarios can be infeasible.
-    m.addConstr(z.sum() <= alpha * data.num_scenarios, name="scenarios")
-
-    if not no_vis:
-        _add_vis(data, alpha, m, y, z)
-
-    m.update()
-    return m
-
-
-def _add_vis(data: ProblemData, alpha: float, m: Model, y: MVar, z: MVar):
-    for scen in range(data.num_scenarios):
-        demand = sum(c.demands[scen] for c in data.commodities)
-
-        from_orig = [
-            idx
-            for node in data.origins()
-            for idx in data.arc_indices_from(node)
-        ]
-        orig_cap = np.array([data.arcs[idx].capacity for idx in from_orig])
-        m.addConstr(orig_cap @ y[from_orig] >= demand * (1 - z[scen]))
-
-        to_dest = [
-            idx
-            for node in data.destinations()
-            for idx in data.arc_indices_to(node)
-        ]
-        dest_cap = np.array([data.arcs[idx].capacity for idx in to_dest])
-        m.addConstr(dest_cap @ y[to_dest] >= demand * (1 - z[scen]))
-
-        for node in data.origins():
-            commodities = [c for c in data.commodities if c.from_node == node]
-            demand = sum(c.demands[scen] for c in commodities)
-
-            from_node = data.arc_indices_from(node)
-            orig_cap = np.array([data.arcs[idx].capacity for idx in from_node])
-            m.addConstr(orig_cap @ y[from_node] >= demand * (1 - z[scen]))
-
-        for node in data.destinations():
-            commodities = [c for c in data.commodities if c.to_node == node]
-            demand = sum(c.demands[scen] for c in commodities)
-
-            to_node = data.arc_indices_to(node)
-            dest_cap = np.array([data.arcs[idx].capacity for idx in to_node])
-            m.addConstr(dest_cap @ y[to_node] >= demand * (1 - z[scen]))

@@ -27,6 +27,11 @@ def parse_args():
         action="store_true",
         help="Do not add (initial) valid inequalities.",
     )
+    parser.add_argument(
+        "--without_master_scenario",
+        action="store_true",
+        help="Do not create one scenario to retain in the master problem.",
+    )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -87,7 +92,12 @@ def main():
     args = parse_args()
 
     data = ProblemData.from_file(args.data_loc)
-    master = MasterProblem(data, args.alpha, args.no_vis)
+    master = MasterProblem(
+        data,
+        args.alpha,
+        args.no_vis,
+        args.without_master_scenario,
+    )
 
     if res := args.func(data, master, args):
         res.to_file(args.res_loc)

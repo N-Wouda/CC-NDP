@@ -26,8 +26,10 @@ class DeterministicEquivalent:
         self.model = master.model.copy()
 
         dec_vars = self.model.getVars()
-        y = dec_vars[: -len(subs)]
-        z = dec_vars[-len(subs) :]
+        num_arcs = len(master.c)
+        num_scen = len(subs)
+        y = dec_vars[:num_arcs]
+        z = dec_vars[num_arcs : num_arcs + num_scen]
 
         for idx, sub in enumerate(subs):
             self._add_subproblem(y, z[idx], sub)
