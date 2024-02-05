@@ -37,13 +37,14 @@ def create_master_model(
         _add_vis(data, alpha, m, y, z)
 
     if not without_master_scenario:
-        # Then we add an artificial scenario that must always be made feasible.
-        # This scenario has the marginal demands of each commodity at the
-        # (1 - alpha)-quantile.
-        demands = [
-            np.quantile(c.demands, 1 - alpha, method="higher")
-            for c in data.commodities
-        ]
+        # Then we add an artificial scenario that must first be made feasible.
+        # This scenario has the average demands of each commodity's demand
+        # that is less than the (1 - alpha)-quantile.
+        demands = []
+        for c in data.commodities:
+            quantile = np.quantile(c.demands, 1 - alpha, method="lower")
+            demands.append(np.mean(c.demands[c.demands <= quantile]))
+
         create_sub_model(data, demands, m, y)  # create into given model
 
     m.update()
