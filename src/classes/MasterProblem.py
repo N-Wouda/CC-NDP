@@ -26,7 +26,7 @@ class MasterProblem:
         min  c y
         s.t.      Ay ~ b
              sum(z) <= alpha N
-             y mixed-integer, z binary
+             y, z binary
 
     The variables y in this model are passed to the scenario subproblems.
 
@@ -37,10 +37,6 @@ class MasterProblem:
     alpha
         Controls the percentage of scenarios that can be infeasible: at least
         (1 - alpha)% of the scenarios must be feasible.
-    no_vis
-        Whether to include the valid inequalities (VI's) in the model. These
-        are not strictly needed, but help the formulation solve much faster.
-        If True, VI's are not added; else they are.
     params
         Any keyword arguments are passed to the Gurobi model as parameters.
     without_master_scenario
@@ -53,18 +49,11 @@ class MasterProblem:
         self,
         data: ProblemData,
         alpha: float,
-        no_vis: bool,
         without_master_scenario: bool,
         **params,
     ):
         logger.info("Creating master problem.")
-
-        self.model = create_master_model(
-            data,
-            alpha,
-            no_vis,
-            without_master_scenario,
-        )
+        self.model = create_master_model(data, alpha, without_master_scenario)
 
         for param, value in (DEFAULT_MASTER_PARAMS | params).items():
             logger.debug(f"Setting {param} = {value}.")

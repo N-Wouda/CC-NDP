@@ -39,9 +39,3 @@ Additionally, a deterministic equivalent solver is available and may be used as 
 poetry run solve instances/r04-7-16.ndp out.json 0.1 deq --time_limit 120
 ```
 The deterministic equivalent solver is useful for verifying correct outputs.
-
-Both the decomposition routine and deterministic equivalent use the valid inequalities by default.
-One can disable these by passing `--no_vis` after the $\alpha$ level, as follows:
-```
-poetry run solve instances/r04-7-16.ndp out.json 0.1 --no_vis decomp FlowMIS
-```
