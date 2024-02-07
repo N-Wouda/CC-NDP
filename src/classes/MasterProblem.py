@@ -37,12 +37,12 @@ class MasterProblem:
     alpha
         Controls the percentage of scenarios that can be infeasible: at least
         (1 - alpha)% of the scenarios must be feasible.
-    params
-        Any keyword arguments are passed to the Gurobi model as parameters.
     without_master_scenario
         Do not create a single scenario based on the marginal demand data.
         Such a scenario can strengthen the master problem substantially.
         The single scenario also includes relevant strong inequalities.
+    params
+        Any keyword arguments are passed to the Gurobi model as parameters.
     """
 
     def __init__(
