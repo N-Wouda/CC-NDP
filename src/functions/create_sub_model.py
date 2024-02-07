@@ -7,26 +7,27 @@ from src.classes.ProblemData import ProblemData
 def create_sub_model(
     data: ProblemData,
     demands: np.ndarray[int],
-    m: Model = None,
+    model: Model = None,
     y: MVar = None,
 ) -> Model:
     """
     Creates a second-stage model, optionally using a given first-stage model
     to add the second stage to.
     """
-    if m is None:
+    if model is None:
         m = Model()
-        y = m.addMVar((data.num_arcs,), name="y")  # 1st stage
+        y: MVar = m.addMVar((data.num_arcs,), name="y")  # type: ignore
+    else:
+        m = model
 
     x = m.addMVar((data.num_arcs, data.num_commodities), name="x")  # 2nd stage
 
     # Capacity constraints.
     for idx, arc in enumerate(data.arcs):
         # All flow through an arc must not exceed the arc's capacity.
-        m.addConstr(
-            x[idx, :].sum() <= arc.capacity * y[idx],
-            name=f"capacity{arc}",
-        )
+        lhs = x[idx, :].sum()
+        rhs = arc.capacity * y[idx]
+        m.addConstr(lhs <= rhs, name=f"capacity{arc}")
 
     # Balance constraints.
     for commodity_idx, commodity in enumerate(data.commodities):

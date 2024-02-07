@@ -36,14 +36,17 @@ def create_master_model(
     if not no_vis:
         _add_vis(data, alpha, m, y, z)
 
-    if not without_master_scenario:
+    if not without_master_scenario and not np.isclose(alpha, 1):
         # Then we add an artificial scenario that must first be made feasible.
         # This scenario has the average demands of each commodity's demand
-        # that is less than the (1 - alpha)-quantile.
+        # that is less than its marginal (1 - alpha)-quantile. This is
+        # essentially the chance-constrained equivalent of the mean value
+        # scenario, and it is valid by a suitable adaptation of Lemma 1 of
+        # Crainic et al. (2021)'s partial Benders decomposition paper.
         demands = []
         for c in data.commodities:
-            quantile = np.quantile(c.demands, 1 - alpha, method="lower")
-            demands.append(np.mean(c.demands[c.demands <= quantile]))
+            quantile = np.quantile(c.demands, 1 - alpha, method="higher")
+            demands.append(np.mean(c.demands, where=c.demands <= quantile))
 
         create_sub_model(data, demands, m, y)  # create into given model
 
