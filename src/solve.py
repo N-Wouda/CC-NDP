@@ -73,10 +73,7 @@ def run_decomp(data, master, args) -> Result:
         for scen in range(data.num_scenarios)
     ]
 
-    return master.solve_decomposition(
-        subs,
-        args.with_combinatorial_cut,
-    )
+    return master.solve_decomposition(subs, args.with_combinatorial_cut)
 
 
 def run_deq(data, master, args) -> Result | None:
