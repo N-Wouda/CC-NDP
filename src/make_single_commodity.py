@@ -1,5 +1,5 @@
 """
-Ugly, one-off script that makes the single-commodity benchmark instances.
+Ugly, one-off script that generates the single-commodity benchmark instances.
 """
 import csv
 import glob
