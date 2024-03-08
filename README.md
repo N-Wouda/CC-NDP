@@ -40,3 +40,17 @@ Finally, a deterministic equivalent solver is available and may be used as follo
 poetry run solve instances/r04-7-16.ndp out.json 0.1 deq --time_limit 120
 ```
 The deterministic equivalent solver is useful for verifying correct outputs, but typically does not scale as well as the decomposition method.
+
+## Paper
+
+For more details, see our preprint [_On feasibility cuts for chance-constrained multicommodity network design problems_](https://doi.org/10.48550/arXiv.2403.03567). 
+If this code is useful for your work, please consider citing our work:
+```
+@misc{Wouda2024,
+      title={On feasibility cuts for chance-constrained multicommodity network design problems}, 
+      author={Niels A. Wouda and Ward Romeijnders and Evrim Ursavas},
+      year={2024},
+      eprint={2403.03567},
+      url = {https://doi.org/10.48550/arXiv.2403.03567}
+}
+```
